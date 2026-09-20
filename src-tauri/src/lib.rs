@@ -89,6 +89,12 @@ fn exit_snipping(app: tauri::AppHandle, show_window: bool) -> Result<(), String>
 }
 
 #[tauri::command]
+fn show_main_window(app: tauri::AppHandle) -> Result<(), String> {
+    focus_main_window(&app);
+    Ok(())
+}
+
+#[tauri::command]
 fn hide_main_window(app: tauri::AppHandle) -> Result<(), String> {
     if let Some(window) = app.get_webview_window("main") {
         let _ = window.hide();
@@ -167,6 +173,7 @@ pub fn run() {
             register_trigger_shortcut,
             enter_snipping,
             exit_snipping,
+            show_main_window,
             hide_main_window
         ])
         .run(tauri::generate_context!())

@@ -752,6 +752,17 @@ kbd {
 }
 
 /* Fullscreen Snipping Overlay */
+body.snipping-active {
+  background: transparent !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+}
+
+body.snipping-active .card-app {
+  display: none !important;
+}
+
 .snipping-overlay {
   position: fixed;
   top: 0;

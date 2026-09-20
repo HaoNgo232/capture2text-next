@@ -513,11 +513,9 @@ document.addEventListener("DOMContentLoaded", () => {
   // ==========================================
   // OCR EXECUTION PIPELINE (Tesseract.js WASM)
   // ==========================================
-  async function runOcrOnCanvas(canvas: HTMLCanvasElement) {
+  async function runOcrOnCanvas(canvas: HTMLCanvasElement, showWindowWhenDone: boolean = false) {
     const lang = ocrLangSelect.value;
     const processedCanvas = preprocessImageForOcr(canvas);
-
-    switchView("main");
 
     previewCanvas.width = canvas.width;
     previewCanvas.height = canvas.height;
@@ -552,18 +550,39 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (!cleaned) {
         sourceInput.value = "(Không tìm thấy ký tự trong vùng chọn)";
+        if (showWindowWhenDone) {
+          switchView("main");
+          await invoke("show_main_window");
+        }
         return;
       }
 
       sourceInput.value = cleaned;
 
       if (autoTranslateCheckbox.checked) {
-        performTranslation();
+        await performTranslation();
+      }
+
+      if (showWindowWhenDone) {
+        switchView("main");
+        const translationText = targetDisplay.textContent?.trim() || "";
+        if (translationText && !translationText.startsWith("Lỗi")) {
+          try {
+            await navigator.clipboard.writeText(translationText);
+          } catch (e) {
+            console.warn("Clipboard auto-write:", e);
+          }
+        }
+        await invoke("show_main_window");
       }
     } catch (err: unknown) {
       ocrProgressBar.classList.add("hidden");
       const errStr = err instanceof Error ? err.message : String(err);
       targetDisplay.textContent = `Lỗi OCR: ${errStr}`;
+      if (showWindowWhenDone) {
+        switchView("main");
+        await invoke("show_main_window");
+      }
     }
   }
 
@@ -586,7 +605,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const ctx = tempCanvas.getContext("2d");
             if (ctx) {
               ctx.drawImage(img, 0, 0);
-              runOcrOnCanvas(tempCanvas);
+              runOcrOnCanvas(tempCanvas, false);
             }
           };
           img.src = URL.createObjectURL(file);
@@ -597,19 +616,22 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // ==========================================
-  // SCREEN CAPTURE & SNIPPING OVERLAY
-  // ==========================================
-  // ==========================================
   // NATIVE SCREEN CAPTURE & SNIPPING OVERLAY
   // ==========================================
+  let isCapturing = false;
+
   async function triggerNativeCapture() {
+    if (isCapturing) return;
+    isCapturing = true;
+
     try {
       // 1. Invoke Rust backend to take screenshot of primary monitor
       const dataUrl = await invoke<string>("capture_screen");
 
       const img = new Image();
       img.onload = async () => {
-        // 2. Put window into full screen snipping overlay
+        // 2. Hide card app and activate full screen snipping mode
+        document.body.classList.add("snipping-active");
         try {
           await invoke("enter_snipping");
         } catch (err) {
@@ -618,8 +640,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
         startSnippingSelection(img);
       };
+      img.onerror = () => {
+        isCapturing = false;
+        document.body.classList.remove("snipping-active");
+      };
       img.src = dataUrl;
     } catch (err: unknown) {
+      isCapturing = false;
+      document.body.classList.remove("snipping-active");
       const errStr = err instanceof Error ? err.message : String(err);
       console.error("Lỗi chụp màn hình:", errStr);
       targetDisplay.textContent = `Lỗi chụp màn hình: ${errStr}`;
@@ -645,7 +673,10 @@ document.addEventListener("DOMContentLoaded", () => {
     snippingCanvas.height = window.innerHeight;
 
     const sCtx = snippingCanvas.getContext("2d");
-    if (!sCtx) return;
+    if (!sCtx) {
+      isCapturing = false;
+      return;
+    }
 
     const sourceWidth = "naturalWidth" in fullScreenshot ? fullScreenshot.naturalWidth : fullScreenshot.width;
     const sourceHeight = "naturalHeight" in fullScreenshot ? fullScreenshot.naturalHeight : fullScreenshot.height;
@@ -706,12 +737,14 @@ document.addEventListener("DOMContentLoaded", () => {
     const onMouseUp = async () => {
       if (!isDrawing) return;
       isDrawing = false;
-      await cleanup(true);
 
       const x = Math.min(startX, currentX);
       const y = Math.min(startY, currentY);
       const w = Math.abs(currentX - startX);
       const h = Math.abs(currentY - startY);
+
+      // IMMEDIATELY hide window so user returns to desktop/Chrome
+      await cleanup(false);
 
       if (w > 10 && h > 10) {
         const cropCanvas = document.createElement("canvas");
@@ -733,19 +766,23 @@ document.addEventListener("DOMContentLoaded", () => {
             cropCanvas.width,
             cropCanvas.height
           );
-          runOcrOnCanvas(cropCanvas);
+          // Run OCR & translation in background, and ONLY show window when complete!
+          await runOcrOnCanvas(cropCanvas, true);
         }
       }
+      isCapturing = false;
     };
 
     const onKeyDown = async (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         await cleanup(false);
+        isCapturing = false;
       }
     };
 
     async function cleanup(showWindow: boolean) {
       snippingOverlay.classList.add("hidden");
+      document.body.classList.remove("snipping-active");
       window.removeEventListener("mousedown", onMouseDown);
       window.removeEventListener("mousemove", onMouseMove);
       window.removeEventListener("mouseup", onMouseUp);
