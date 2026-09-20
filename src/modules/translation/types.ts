@@ -1,7 +1,11 @@
+export type OcrLanguageCode = "jpn" | "eng" | "vie" | "chi_sim" | (string & {});
+export type TargetLanguageCode = "vi" | "en" | "ja" | "zh-CN" | (string & {});
+export type TtsLanguageCode = "vi" | "en" | "ja" | "zh-CN" | (string & {});
+
 export interface TranslationRequest {
   text: string;
   sourceLang?: string;
-  targetLang: string;
+  targetLang: TargetLanguageCode;
 }
 
 export interface TranslationResult {

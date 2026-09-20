@@ -53,6 +53,64 @@ class MemoryStorage implements SimpleStorage {
   }
 }
 
+interface ConfigFieldDef<T> {
+  storageKey: string;
+  defaultVal: T;
+  deserialize: (raw: string | null) => T;
+  serialize: (val: T) => string;
+}
+
+const CONFIG_SCHEMA: { [K in keyof AppConfig]: ConfigFieldDef<AppConfig[K]> } = {
+  apiKey: {
+    storageKey: STORAGE_KEYS.API_KEY,
+    defaultVal: DEFAULT_CONFIG.apiKey,
+    deserialize: (raw) => raw ?? DEFAULT_CONFIG.apiKey,
+    serialize: String,
+  },
+  model: {
+    storageKey: STORAGE_KEYS.MODEL,
+    defaultVal: DEFAULT_CONFIG.model,
+    deserialize: (raw) => raw ?? DEFAULT_CONFIG.model,
+    serialize: String,
+  },
+  provider: {
+    storageKey: STORAGE_KEYS.PROVIDER,
+    defaultVal: DEFAULT_CONFIG.provider,
+    deserialize: (raw) => (raw === "groq" || raw === "google" ? raw : DEFAULT_CONFIG.provider),
+    serialize: String,
+  },
+  ocrLang: {
+    storageKey: STORAGE_KEYS.OCR_LANG,
+    defaultVal: DEFAULT_CONFIG.ocrLang,
+    deserialize: (raw) => raw ?? DEFAULT_CONFIG.ocrLang,
+    serialize: String,
+  },
+  shortcut: {
+    storageKey: STORAGE_KEYS.SHORTCUT,
+    defaultVal: DEFAULT_CONFIG.shortcut,
+    deserialize: (raw) => raw ?? DEFAULT_CONFIG.shortcut,
+    serialize: String,
+  },
+  startHidden: {
+    storageKey: STORAGE_KEYS.START_HIDDEN,
+    defaultVal: DEFAULT_CONFIG.startHidden,
+    deserialize: (raw) => (raw === null ? DEFAULT_CONFIG.startHidden : raw === "true"),
+    serialize: String,
+  },
+  showPreview: {
+    storageKey: STORAGE_KEYS.SHOW_PREVIEW,
+    defaultVal: DEFAULT_CONFIG.showPreview,
+    deserialize: (raw) => (raw === null ? DEFAULT_CONFIG.showPreview : raw === "true"),
+    serialize: String,
+  },
+  autoTranslate: {
+    storageKey: STORAGE_KEYS.AUTO_TRANSLATE,
+    defaultVal: DEFAULT_CONFIG.autoTranslate,
+    deserialize: (raw) => (raw === null ? DEFAULT_CONFIG.autoTranslate : raw === "true"),
+    serialize: String,
+  },
+};
+
 export class ConfigStore {
   private storage: SimpleStorage;
 
@@ -67,79 +125,26 @@ export class ConfigStore {
   }
 
   get<K extends keyof AppConfig>(key: K): AppConfig[K] {
-    switch (key) {
-      case "apiKey": {
-        return (this.storage.getItem(STORAGE_KEYS.API_KEY) ?? DEFAULT_CONFIG.apiKey) as AppConfig[K];
-      }
-      case "model": {
-        return (this.storage.getItem(STORAGE_KEYS.MODEL) ?? DEFAULT_CONFIG.model) as AppConfig[K];
-      }
-      case "provider": {
-        const val = this.storage.getItem(STORAGE_KEYS.PROVIDER);
-        return (val === "groq" || val === "google" ? val : DEFAULT_CONFIG.provider) as AppConfig[K];
-      }
-      case "ocrLang": {
-        return (this.storage.getItem(STORAGE_KEYS.OCR_LANG) ?? DEFAULT_CONFIG.ocrLang) as AppConfig[K];
-      }
-      case "shortcut": {
-        return (this.storage.getItem(STORAGE_KEYS.SHORTCUT) ?? DEFAULT_CONFIG.shortcut) as AppConfig[K];
-      }
-      case "startHidden": {
-        const val = this.storage.getItem(STORAGE_KEYS.START_HIDDEN);
-        return (val === null ? DEFAULT_CONFIG.startHidden : val === "true") as AppConfig[K];
-      }
-      case "showPreview": {
-        const val = this.storage.getItem(STORAGE_KEYS.SHOW_PREVIEW);
-        return (val === null ? DEFAULT_CONFIG.showPreview : val === "true") as AppConfig[K];
-      }
-      case "autoTranslate": {
-        const val = this.storage.getItem(STORAGE_KEYS.AUTO_TRANSLATE);
-        return (val === null ? DEFAULT_CONFIG.autoTranslate : val === "true") as AppConfig[K];
-      }
-      default:
-        return DEFAULT_CONFIG[key];
+    const field = CONFIG_SCHEMA[key];
+    if (!field) {
+      return DEFAULT_CONFIG[key];
     }
+    return field.deserialize(this.storage.getItem(field.storageKey)) as AppConfig[K];
   }
 
   getAll(): AppConfig {
-    return {
-      apiKey: this.get("apiKey"),
-      model: this.get("model"),
-      provider: this.get("provider"),
-      ocrLang: this.get("ocrLang"),
-      shortcut: this.get("shortcut"),
-      startHidden: this.get("startHidden"),
-      showPreview: this.get("showPreview"),
-      autoTranslate: this.get("autoTranslate"),
-    };
+    const keys = Object.keys(CONFIG_SCHEMA) as (keyof AppConfig)[];
+    const result = {} as AppConfig;
+    for (const key of keys) {
+      result[key] = this.get(key) as never;
+    }
+    return result;
   }
 
   set<K extends keyof AppConfig>(key: K, value: AppConfig[K]): void {
-    switch (key) {
-      case "apiKey":
-        this.storage.setItem(STORAGE_KEYS.API_KEY, String(value));
-        break;
-      case "model":
-        this.storage.setItem(STORAGE_KEYS.MODEL, String(value));
-        break;
-      case "provider":
-        this.storage.setItem(STORAGE_KEYS.PROVIDER, String(value));
-        break;
-      case "ocrLang":
-        this.storage.setItem(STORAGE_KEYS.OCR_LANG, String(value));
-        break;
-      case "shortcut":
-        this.storage.setItem(STORAGE_KEYS.SHORTCUT, String(value));
-        break;
-      case "startHidden":
-        this.storage.setItem(STORAGE_KEYS.START_HIDDEN, String(value));
-        break;
-      case "showPreview":
-        this.storage.setItem(STORAGE_KEYS.SHOW_PREVIEW, String(value));
-        break;
-      case "autoTranslate":
-        this.storage.setItem(STORAGE_KEYS.AUTO_TRANSLATE, String(value));
-        break;
+    const field = CONFIG_SCHEMA[key];
+    if (field) {
+      this.storage.setItem(field.storageKey, field.serialize(value));
     }
   }
 

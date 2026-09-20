@@ -14,6 +14,12 @@ describe("ShortcutManager", () => {
       } as unknown as KeyboardEvent;
 
       expect(ShortcutManager.parseFromEvent(event)).toBe("Ctrl+Alt+Q");
+      const detailed = ShortcutManager.parseDetailedFromEvent(event);
+      expect(detailed).toEqual({
+        modifiers: ["Ctrl", "Alt"],
+        key: "Q",
+        canonical: "Ctrl+Alt+Q",
+      });
     });
 
     it("parses digit codes correctly", () => {

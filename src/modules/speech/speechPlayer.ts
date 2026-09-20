@@ -129,6 +129,13 @@ export class NaturalSpeechPlayer {
         langCode
       )}&client=tw-ob&q=${encodeURIComponent(currentText)}`;
 
+      let fallbackTriggered = false;
+      const handleTtsFailure = () => {
+        if (!this.active || fallbackTriggered) return;
+        fallbackTriggered = true;
+        this.playFallbackWebSpeech(currentText, langCode, () => playNextChunk());
+      };
+
       try {
         const audio = this.audioFactory(ttsUrl);
         this.currentAudio = audio;
@@ -138,21 +145,14 @@ export class NaturalSpeechPlayer {
           playNextChunk();
         };
 
-        audio.onerror = () => {
-          if (!this.active) return;
-          this.playFallbackWebSpeech(currentText, langCode, () => playNextChunk());
-        };
+        audio.onerror = handleTtsFailure;
 
         const playPromise = audio.play();
         if (playPromise !== undefined && typeof playPromise.catch === "function") {
-          playPromise.catch(() => {
-            if (!this.active) return;
-            this.playFallbackWebSpeech(currentText, langCode, () => playNextChunk());
-          });
+          playPromise.catch(handleTtsFailure);
         }
       } catch {
-        if (!this.active) return;
-        this.playFallbackWebSpeech(currentText, langCode, () => playNextChunk());
+        handleTtsFailure();
       }
     };
 

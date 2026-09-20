@@ -1,5 +1,11 @@
 export type Modifier = "Ctrl" | "Alt" | "Shift" | "Super";
 
+export interface ParsedShortcut {
+  modifiers: Modifier[];
+  key: string;
+  canonical: string;
+}
+
 const CANONICAL_MODIFIERS: Modifier[] = ["Ctrl", "Alt", "Shift", "Super"];
 
 const MODIFIER_ALIASES: Record<string, Modifier> = {
@@ -17,10 +23,10 @@ const MODIFIER_ALIASES: Record<string, Modifier> = {
 
 export class ShortcutManager {
   /**
-   * Parses a KeyboardEvent into a canonical shortcut string (e.g., "Ctrl+Alt+Q").
+   * Parses a KeyboardEvent into a structured ParsedShortcut object.
    * Returns null for standalone modifier presses or Escape.
    */
-  static parseFromEvent(e: KeyboardEvent): string | null {
+  static parseDetailedFromEvent(e: KeyboardEvent, defaultToAlt: boolean = true): ParsedShortcut | null {
     if (e.key === "Escape") {
       return null;
     }
@@ -45,16 +51,28 @@ export class ShortcutManager {
       keyPart = e.key.toUpperCase();
     }
 
-    // If no modifiers and not an F-key, default to Alt
     const isFKey = /^F([1-9]|1[0-2])$/i.test(keyPart);
-    if (mods.length === 0 && !isFKey) {
+    if (mods.length === 0 && !isFKey && defaultToAlt) {
       mods.push("Alt");
     }
 
-    // Sort modifiers according to canonical order
     const orderedMods = CANONICAL_MODIFIERS.filter((m) => mods.includes(m));
+    const canonical = [...orderedMods, keyPart].join("+");
 
-    return [...orderedMods, keyPart].join("+");
+    return {
+      modifiers: orderedMods,
+      key: keyPart,
+      canonical,
+    };
+  }
+
+  /**
+   * Parses a KeyboardEvent into a canonical shortcut string (e.g., "Ctrl+Alt+Q").
+   * Returns null for standalone modifier presses or Escape.
+   */
+  static parseFromEvent(e: KeyboardEvent): string | null {
+    const detailed = this.parseDetailedFromEvent(e, true);
+    return detailed ? detailed.canonical : null;
   }
 
   /**
