@@ -18,6 +18,7 @@ const STORAGE_KEY_API_KEY = "capture2text_groq_api_key";
 const STORAGE_KEY_MODEL = "capture2text_groq_model";
 const STORAGE_KEY_PROVIDER = "capture2text_provider";
 const STORAGE_KEY_OCR_LANG = "capture2text_ocr_lang";
+const STORAGE_KEY_START_HIDDEN = "capture2text_start_hidden";
 
 const GOOGLE_ICON_SVG = `
 <svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true">
@@ -178,6 +179,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const modelSelect = document.getElementById("modelSelect") as HTMLSelectElement;
   const saveSettingsBtn = document.getElementById("saveSettingsBtn") as HTMLButtonElement;
   const autoTranslateCheckbox = document.getElementById("autoTranslateCheckbox") as HTMLInputElement;
+  const startHiddenCheckbox = document.getElementById("startHiddenCheckbox") as HTMLInputElement | null;
   const shortcutPresetSelect = document.getElementById("shortcutPresetSelect") as HTMLSelectElement;
   const customShortcutInput = document.getElementById("customShortcutInput") as HTMLInputElement;
   const recordShortcutBtn = document.getElementById("recordShortcutBtn") as HTMLButtonElement;
@@ -246,6 +248,16 @@ document.addEventListener("DOMContentLoaded", () => {
   modelSelect.value = localStorage.getItem(STORAGE_KEY_MODEL) || "llama-3.3-70b-versatile";
   providerSelect.value = localStorage.getItem(STORAGE_KEY_PROVIDER) || "google";
   ocrLangSelect.value = localStorage.getItem(STORAGE_KEY_OCR_LANG) || "jpn";
+
+  const savedStartHidden = localStorage.getItem(STORAGE_KEY_START_HIDDEN) === "true";
+  if (startHiddenCheckbox) {
+    startHiddenCheckbox.checked = savedStartHidden;
+  }
+
+  // If not configured to start hidden, show and focus the main window on startup
+  if (!savedStartHidden) {
+    invoke("show_main_window").catch((err) => console.warn("Failed to show window on startup:", err));
+  }
 
   const savedShortcut = localStorage.getItem(STORAGE_KEY_SHORTCUT) || "Alt+Q";
   const knownPresets = ["Alt+Q", "Ctrl+Shift+S", "Ctrl+Shift+Q", "Alt+D", "F4"];
@@ -356,6 +368,9 @@ document.addEventListener("DOMContentLoaded", () => {
     cancelSettingsBtn.addEventListener("click", () => {
       apiKeyInput.value = localStorage.getItem(STORAGE_KEY_API_KEY) || "";
       modelSelect.value = localStorage.getItem(STORAGE_KEY_MODEL) || "llama-3.3-70b-versatile";
+      if (startHiddenCheckbox) {
+        startHiddenCheckbox.checked = localStorage.getItem(STORAGE_KEY_START_HIDDEN) === "true";
+      }
       const saved = localStorage.getItem(STORAGE_KEY_SHORTCUT) || "Alt+Q";
       syncShortcutPicker(saved);
       stopRecordingShortcut();
@@ -443,6 +458,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     localStorage.setItem(STORAGE_KEY_API_KEY, apiKeyInput.value.trim());
     localStorage.setItem(STORAGE_KEY_MODEL, modelSelect.value);
+    if (startHiddenCheckbox) {
+      localStorage.setItem(STORAGE_KEY_START_HIDDEN, startHiddenCheckbox.checked ? "true" : "false");
+    }
 
     updateProviderUI();
     switchView("main");
