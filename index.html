@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="stylesheet" href="/src/styles.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Capture2Text NextGen - Classic Card</title>
+    <!-- Tesseract.js WebAssembly OCR Engine -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <script type="module" src="/src/main.ts" defer></script>
+  </head>
+
+  <body>
+    <div class="card-app">
+      <!-- Card Header -->
+      <header class="card-header">
+        <div class="brand">
+          <span class="logo-icon">🔍</span>
+          <div>
+            <h1 class="title">Capture2Text Next</h1>
+            <span class="subtitle">OCR Engine + Groq Llama 3.3 & Google</span>
+          </div>
+        </div>
+        <div class="status-badge" id="statusBadge">⚡ Ready</div>
+      </header>
+
+      <!-- Main Translation Body -->
+      <main class="card-body">
+        <!-- Quick Action Toolbar: Screen Capture & Paste -->
+        <div class="ocr-toolbar">
+          <button id="captureBtn" class="btn btn-capture">
+            <span>📸 Chụp Vùng Màn Hình</span>
+          </button>
+          <div class="select-group">
+            <label for="ocrLangSelect">Ngôn ngữ OCR:</label>
+            <select id="ocrLangSelect" class="select-box">
+              <option value="jpn" selected>🇯🇵 Tiếng Nhật (jpn)</option>
+              <option value="eng">🇬🇧 Tiếng Anh (eng)</option>
+              <option value="vie">🇻🇳 Tiếng Việt (vie)</option>
+              <option value="chi_sim">🇨🇳 Tiếng Trung (chi_sim)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Image Snippet Preview (Shown when an image is captured/pasted) -->
+        <div id="imagePreviewContainer" class="image-preview-container hidden">
+          <div class="preview-header">
+            <span>Ảnh vùng quét (Đã xử lý 300 DPI):</span>
+            <button id="clearImageBtn" class="btn-icon">✕</button>
+          </div>
+          <canvas id="previewCanvas" class="preview-canvas"></canvas>
+          <div id="ocrProgressBar" class="ocr-progress-bar hidden">
+            <div id="ocrProgressFill" class="ocr-progress-fill"></div>
+            <span id="ocrProgressText" class="ocr-progress-text">Đang nhận diện chữ... 0%</span>
+          </div>
+        </div>
+
+        <!-- Source Text Box -->
+        <div class="text-group">
+          <div class="label-row">
+            <span class="label">Văn bản nhận diện (OCR / Source):</span>
+            <span class="tip-hint">Hoặc nhấn Ctrl+V để dán ảnh màn hình</span>
+          </div>
+          <textarea
+            id="sourceInput"
+            class="textarea source-area"
+            rows="3"
+            placeholder="Nhấn 'Chụp Vùng Màn Hình' hoặc dán ảnh (Ctrl+V) / gõ chữ vào đây..."
+          >私たちはオープンソースソフトウェアの力で、世界中の言葉の壁を打ち破ります。</textarea>
+        </div>
+
+        <!-- Action Control Bar -->
+        <div class="controls-row">
+          <div class="select-group">
+            <label for="providerSelect">Bộ dịch:</label>
+            <select id="providerSelect" class="select-box">
+              <option value="google" selected>🌐 Google Translate (Free)</option>
+              <option value="groq">⚡ Groq (Llama 3.3 AI)</option>
+            </select>
+          </div>
+
+          <div class="select-group">
+            <label for="targetLangSelect">Dịch sang:</label>
+            <select id="targetLangSelect" class="select-box">
+              <option value="vi" selected>🇻🇳 Tiếng Việt</option>
+              <option value="en">🇬🇧 English</option>
+              <option value="ja">🇯🇵 Japanese</option>
+              <option value="zh-CN">🇨🇳 Chinese</option>
+              <option value="de">🇩🇪 German</option>
+              <option value="fr">🇫🇷 French</option>
+            </select>
+          </div>
+
+          <button id="translateBtn" class="btn btn-primary">
+            <span>Dịch Ngay</span>
+          </button>
+        </div>
+
+        <!-- Translation Result Box -->
+        <div class="text-group">
+          <div class="label-row">
+            <span class="label">Bản dịch (Translation):</span>
+            <span class="latency-counter" id="latencyDisplay">240ms</span>
+          </div>
+          <div id="targetDisplay" class="textarea target-area">
+            Chúng tôi phá vỡ mọi rào cản ngôn ngữ trên toàn thế giới bằng sức mạnh của phần mềm mã nguồn mở.
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="card-actions">
+          <div class="left-actions">
+            <button id="copyBtn" class="btn btn-secondary">📋 Sao chép</button>
+            <button id="speechBtn" class="btn btn-secondary">🔊 Phát âm</button>
+          </div>
+          <button id="toggleSettingsBtn" class="btn btn-ghost">⚙️ Cấu hình</button>
+        </div>
+
+        <!-- Settings Panel (Collapsible) -->
+        <div id="settingsPanel" class="settings-panel hidden">
+          <h3>Cấu hình Dịch Thuật & OCR</h3>
+          <div class="setting-item">
+            <label for="apiKeyInput">Groq API Key (gsk_...):</label>
+            <input
+              type="password"
+              id="apiKeyInput"
+              class="input-box"
+              placeholder="Nhập API Key từ console.groq.com..."
+            />
+            <small>Key được lưu an toàn trong máy của bạn (localStorage).</small>
+          </div>
+          <div class="setting-item">
+            <label for="modelSelect">Mô hình AI:</label>
+            <select id="modelSelect" class="select-box">
+              <option value="llama-3.3-70b-versatile" selected>Llama 3.3 70B Versatile (Khuyên dùng - Dịch thông minh)</option>
+              <option value="llama-3.1-8b-instant">Llama 3.1 8B Instant (Siêu tốc - 840 TPS)</option>
+            </select>
+          </div>
+          <div class="setting-item">
+            <label>
+              <input type="checkbox" id="autoTranslateCheckbox" checked />
+              Tự động dịch ngay sau khi OCR xong
+            </label>
+          </div>
+          <button id="saveSettingsBtn" class="btn btn-primary btn-block">Lưu Cấu Hình</button>
+        </div>
+      </main>
+
+      <!-- Card Footer -->
+      <footer class="card-footer">
+        <span>Mẹo: Bấm <b>Win + Shift + S</b> chụp ảnh rồi vào đây bấm <b>Ctrl + V</b> để OCR siêu nhanh!</span>
+      </footer>
+    </div>
+
+    <!-- Snipping Overlay (Fullscreen when capturing screen) -->
+    <div id="snippingOverlay" class="snipping-overlay hidden">
+      <div class="snipping-instructions">Kéo chuột vẽ khung chữ nhật quanh đoạn chữ cần dịch • Nhấn ESC để hủy</div>
+      <canvas id="snippingCanvas" class="snipping-canvas"></canvas>
+    </div>
+  </body>
+</html>
