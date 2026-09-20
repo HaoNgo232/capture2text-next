@@ -1,3 +1,4 @@
+import Tesseract from "tesseract.js";
 import { preprocessImageForOcr } from "./imagePreprocessor";
 import { cleanRecognizedText } from "./textCleaner";
 
@@ -27,7 +28,7 @@ export class OcrPipeline {
         if (typeof (globalThis as any).Tesseract !== "undefined") {
           return (globalThis as any).Tesseract;
         }
-        return undefined;
+        return Tesseract;
       });
     this.preprocess = deps.preprocess ?? preprocessImageForOcr;
     this.cleanText = deps.cleanText ?? cleanRecognizedText;

@@ -46,6 +46,55 @@ fn capture_screen(app: tauri::AppHandle) -> Result<String, String> {
 }
 
 #[tauri::command]
+fn capture_region(
+    app: tauri::AppHandle,
+    x: u32,
+    y: u32,
+    width: u32,
+    height: u32,
+) -> Result<String, String> {
+    if width == 0 || height == 0 {
+        return Err("Kích thước vùng chọn không hợp lệ".to_string());
+    }
+
+    // Ensure main window is hidden so it is not captured in the screenshot
+    if let Some(window) = app.get_webview_window("main") {
+        if window.is_visible().unwrap_or(false) && !window.is_minimized().unwrap_or(false) {
+            let _ = window.hide();
+            std::thread::sleep(std::time::Duration::from_millis(60));
+        }
+    }
+
+    let monitors = xcap::Monitor::all().map_err(|e| e.to_string())?;
+    let primary = monitors
+        .iter()
+        .find(|m| m.is_primary().unwrap_or(false))
+        .or_else(|| monitors.first())
+        .ok_or_else(|| "Không tìm thấy màn hình hiển thị".to_string())?;
+
+    let full_image = primary.capture_image().map_err(|e| e.to_string())?;
+
+    let img_w = full_image.width();
+    let img_h = full_image.height();
+    if x >= img_w || y >= img_h {
+        return Err("Tọa độ vùng chọn nằm ngoài màn hình".to_string());
+    }
+    let actual_w = width.min(img_w - x);
+    let actual_h = height.min(img_h - y);
+
+    let cropped = image::imageops::crop_imm(&full_image, x, y, actual_w, actual_h);
+
+    let mut buf = Cursor::new(Vec::new());
+    cropped
+        .to_image()
+        .write_to(&mut buf, ImageFormat::Png)
+        .map_err(|e| e.to_string())?;
+
+    let encoded = base64::engine::general_purpose::STANDARD.encode(buf.get_ref());
+    Ok(format!("data:image/png;base64,{}", encoded))
+}
+
+#[tauri::command]
 fn register_trigger_shortcut(app: tauri::AppHandle, shortcut: String) -> Result<String, String> {
     let clean = shortcut.trim().to_string();
     let sc = Shortcut::from_str(&clean)
@@ -170,6 +219,7 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             capture_screen,
+            capture_region,
             register_trigger_shortcut,
             enter_snipping,
             exit_snipping,

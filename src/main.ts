@@ -317,51 +317,35 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // Native Snipping & Screen Capture
+  // Native Snipping & Screen Capture (Real-time Transparent Overlay)
   async function triggerNativeCapture() {
     if (isCapturing) return;
     isCapturing = true;
 
     try {
-      const dataUrl = await invoke<string>("capture_screen");
+      document.documentElement.classList.add("snipping-active");
+      document.body.classList.add("snipping-active");
+      snippingOverlay.classList.remove("hidden");
 
-      const img = new Image();
-      img.onload = async () => {
-        document.documentElement.classList.add("snipping-active");
-        document.body.classList.add("snipping-active");
-        try {
-          await invoke("enter_snipping");
-        } catch (err) {
-          console.warn("Enter snipping error:", err);
-        }
+      // Enter fullscreen transparent mode immediately (<10ms)
+      await invoke("enter_snipping");
 
-        requestAnimationFrame(() => {
-          startSnippingSelection(img);
-        });
-      };
-      img.onerror = () => {
-        isCapturing = false;
-        document.documentElement.classList.remove("snipping-active");
-        document.body.classList.remove("snipping-active");
-      };
-      img.src = dataUrl;
+      startSnippingSelection();
     } catch (err: unknown) {
       isCapturing = false;
       document.documentElement.classList.remove("snipping-active");
       document.body.classList.remove("snipping-active");
+      snippingOverlay.classList.add("hidden");
       const errStr = err instanceof Error ? err.message : String(err);
-      console.error("Lỗi chụp màn hình:", errStr);
-      targetDisplay.textContent = `Lỗi chụp màn hình: ${errStr}`;
+      console.error("Lỗi khởi tạo snipping:", errStr);
+      targetDisplay.textContent = `Lỗi khởi tạo snipping: ${errStr}`;
     }
   }
 
-  function startSnippingSelection(fullScreenshot: HTMLImageElement | HTMLCanvasElement) {
-    const sourceWidth = "naturalWidth" in fullScreenshot ? fullScreenshot.naturalWidth : fullScreenshot.width;
-    const sourceHeight = "naturalHeight" in fullScreenshot ? fullScreenshot.naturalHeight : fullScreenshot.height;
-
-    snippingOverlay.classList.remove("hidden");
-    snippingCanvas.width = sourceWidth;
-    snippingCanvas.height = sourceHeight;
+  function startSnippingSelection() {
+    const dpr = window.devicePixelRatio || 1;
+    snippingCanvas.width = Math.round(window.innerWidth * dpr);
+    snippingCanvas.height = Math.round(window.innerHeight * dpr);
 
     const sCtx = snippingCanvas.getContext("2d");
     if (!sCtx) {
@@ -369,28 +353,17 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
+    sCtx.clearRect(0, 0, snippingCanvas.width, snippingCanvas.height);
+
     let isDrawing = false;
     let startX = 0;
     let startY = 0;
     let currentX = 0;
     let currentY = 0;
 
-    function getCanvasCoords(e: MouseEvent): { x: number; y: number } {
-      const rect = snippingCanvas.getBoundingClientRect();
-      const scaleX = sourceWidth / (rect.width || window.innerWidth || 1);
-      const scaleY = sourceHeight / (rect.height || window.innerHeight || 1);
-      return {
-        x: Math.max(0, Math.min(sourceWidth, (e.clientX - rect.left) * scaleX)),
-        y: Math.max(0, Math.min(sourceHeight, (e.clientY - rect.top) * scaleY)),
-      };
-    }
-
     function draw() {
       if (!sCtx) return;
       sCtx.clearRect(0, 0, snippingCanvas.width, snippingCanvas.height);
-      sCtx.drawImage(fullScreenshot, 0, 0, snippingCanvas.width, snippingCanvas.height);
-      sCtx.fillStyle = "rgba(0, 0, 0, 0.45)";
-      sCtx.fillRect(0, 0, snippingCanvas.width, snippingCanvas.height);
 
       if (isDrawing) {
         const x = Math.min(startX, currentX);
@@ -398,75 +371,122 @@ document.addEventListener("DOMContentLoaded", () => {
         const w = Math.abs(currentX - startX);
         const h = Math.abs(currentY - startY);
 
-        sCtx.drawImage(
-          fullScreenshot,
-          x,
-          y,
-          w,
-          h,
-          x,
-          y,
-          w,
-          h
-        );
+        if (w > 0 && h > 0) {
+          sCtx.save();
+          sCtx.scale(dpr, dpr);
 
-        sCtx.strokeStyle = "#FFFFFF";
-        sCtx.lineWidth = Math.max(1.5, Math.round(2 * (sourceWidth / (snippingCanvas.clientWidth || sourceWidth))));
-        sCtx.setLineDash([6, 6]);
-        sCtx.strokeRect(x, y, w, h);
+          // Subtle highlight tint for selected region
+          sCtx.fillStyle = "rgba(56, 189, 248, 0.08)";
+          sCtx.fillRect(x, y, w, h);
+
+          // Dark outer drop shadow border for visibility against white backgrounds
+          sCtx.strokeStyle = "rgba(0, 0, 0, 0.45)";
+          sCtx.lineWidth = 3;
+          sCtx.setLineDash([]);
+          sCtx.strokeRect(x, y, w, h);
+
+          // Sleek dashed primary border
+          sCtx.strokeStyle = "#38bdf8";
+          sCtx.lineWidth = 2;
+          sCtx.setLineDash([6, 4]);
+          sCtx.strokeRect(x, y, w, h);
+
+          // Dimension badge if region is large enough
+          if (w > 64 && h > 24) {
+            const badgeText = `${Math.round(w * dpr)} × ${Math.round(h * dpr)}`;
+            sCtx.font = "11px system-ui, sans-serif";
+            const textMetrics = sCtx.measureText(badgeText);
+            const badgeW = textMetrics.width + 12;
+            const badgeH = 18;
+            const badgeX = x + 4;
+            const badgeY = y + h - badgeH - 4;
+
+            sCtx.fillStyle = "rgba(17, 17, 17, 0.85)";
+            sCtx.setLineDash([]);
+            sCtx.fillRect(badgeX, badgeY, badgeW, badgeH);
+
+            sCtx.fillStyle = "#ffffff";
+            sCtx.textBaseline = "middle";
+            sCtx.fillText(badgeText, badgeX + 6, badgeY + badgeH / 2);
+          }
+
+          sCtx.restore();
+        }
       }
     }
 
-    draw();
-
     const onMouseDown = (e: MouseEvent) => {
+      if (e.button !== 0) return;
       isDrawing = true;
-      const coords = getCanvasCoords(e);
-      startX = coords.x;
-      startY = coords.y;
-      currentX = coords.x;
-      currentY = coords.y;
+      startX = e.clientX;
+      startY = e.clientY;
+      currentX = e.clientX;
+      currentY = e.clientY;
+      draw();
     };
 
     const onMouseMove = (e: MouseEvent) => {
       if (!isDrawing) return;
-      const coords = getCanvasCoords(e);
-      currentX = coords.x;
-      currentY = coords.y;
+      currentX = e.clientX;
+      currentY = e.clientY;
       draw();
     };
 
-    const onMouseUp = async () => {
+    const onMouseUp = async (e: MouseEvent) => {
       if (!isDrawing) return;
       isDrawing = false;
 
-      const x = Math.round(Math.min(startX, currentX));
-      const y = Math.round(Math.min(startY, currentY));
-      const w = Math.round(Math.abs(currentX - startX));
-      const h = Math.round(Math.abs(currentY - startY));
+      currentX = e.clientX;
+      currentY = e.clientY;
 
+      const xCss = Math.min(startX, currentX);
+      const yCss = Math.min(startY, currentY);
+      const wCss = Math.abs(currentX - startX);
+      const hCss = Math.abs(currentY - startY);
+
+      // Immediately hide overlay so the desktop is clean for capture
       await cleanup(false);
 
-      if (w > 10 && h > 10) {
-        const cropCanvas = document.createElement("canvas");
-        cropCanvas.width = w;
-        cropCanvas.height = h;
-        const cropCtx = cropCanvas.getContext("2d");
-        if (cropCtx) {
-          cropCtx.drawImage(
-            fullScreenshot,
-            x,
-            y,
-            w,
-            h,
-            0,
-            0,
-            w,
-            h
-          );
-          await runOcrOnCanvas(cropCanvas, true);
+      const physicalX = Math.round(xCss * dpr);
+      const physicalY = Math.round(yCss * dpr);
+      const physicalW = Math.round(wCss * dpr);
+      const physicalH = Math.round(hCss * dpr);
+
+      if (physicalW > 8 && physicalH > 8) {
+        try {
+          const croppedDataUrl = await invoke<string>("capture_region", {
+            x: physicalX,
+            y: physicalY,
+            width: physicalW,
+            height: physicalH,
+          });
+
+          const img = new Image();
+          img.onload = async () => {
+            const cropCanvas = document.createElement("canvas");
+            cropCanvas.width = img.naturalWidth || physicalW;
+            cropCanvas.height = img.naturalHeight || physicalH;
+            const ctx = cropCanvas.getContext("2d");
+            if (ctx) {
+              ctx.drawImage(img, 0, 0);
+              await runOcrOnCanvas(cropCanvas, true);
+            }
+            isCapturing = false;
+          };
+          img.onerror = (err) => {
+            console.error("Failed to load cropped screenshot dataUrl", err);
+            isCapturing = false;
+          };
+          img.src = croppedDataUrl;
+          return;
+        } catch (err: unknown) {
+          const errStr = err instanceof Error ? err.message : String(err);
+          console.error("Lỗi capture_region:", errStr);
+          targetDisplay.textContent = `Lỗi chụp vùng: ${errStr}`;
+          await invoke("show_main_window");
         }
       }
+
       isCapturing = false;
     };
 
@@ -485,6 +505,10 @@ document.addEventListener("DOMContentLoaded", () => {
       window.removeEventListener("mousemove", onMouseMove);
       window.removeEventListener("mouseup", onMouseUp);
       window.removeEventListener("keydown", onKeyDown);
+
+      if (sCtx) {
+        sCtx.clearRect(0, 0, snippingCanvas.width, snippingCanvas.height);
+      }
 
       try {
         await invoke("exit_snipping", { showWindow });
