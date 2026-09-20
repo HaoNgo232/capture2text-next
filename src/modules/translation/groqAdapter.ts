@@ -17,10 +17,56 @@ interface GroqChatResponse {
   };
 }
 
+export interface GroqModelItem {
+  id: string;
+  active?: boolean;
+  context_window?: number;
+}
+
 export class GroqTranslateAdapter implements TranslationAdapter {
   private getApiKey: () => string;
   private getModel: () => string;
   private fetcher: typeof fetch;
+
+  static async fetchAvailableModels(
+    apiKey: string,
+    fetcher?: typeof fetch
+  ): Promise<GroqModelItem[]> {
+    const key = apiKey.trim();
+    if (!key) {
+      throw new Error("Groq API Key is missing");
+    }
+
+    const rawFetcher = fetcher ?? fetch;
+    const safeFetcher = (url: RequestInfo | URL, init?: RequestInit) => rawFetcher(url, init);
+
+    const response = await safeFetcher("https://api.groq.com/openai/v1/models", {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${key}`,
+      },
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.error?.message || `HTTP ${response.status}`);
+    }
+
+    const list: Array<{ id: string; active?: boolean; context_window?: number }> = data.data || [];
+
+    // Filter active chat completion models: exclude whisper, guard, embeddings
+    const chatModels = list.filter((m) => {
+      if (m.active === false) return false;
+      const id = m.id.toLowerCase();
+      if (id.includes("whisper") || id.includes("guard") || id.includes("embed")) {
+        return false;
+      }
+      return true;
+    });
+
+    chatModels.sort((a, b) => a.id.localeCompare(b.id));
+    return chatModels;
+  }
 
   constructor(options: GroqAdapterOptions) {
     this.getApiKey = typeof options.apiKey === "function" ? options.apiKey : () => options.apiKey as string;
@@ -62,7 +108,13 @@ export class GroqTranslateAdapter implements TranslationAdapter {
 
     const data: GroqChatResponse = await response.json();
     if (!response.ok) {
-      throw new Error(data.error?.message || `HTTP ${response.status}`);
+      const msg = data.error?.message || `HTTP ${response.status}`;
+      if (msg.includes("does not exist") || msg.includes("access to it")) {
+        throw new Error(
+          `Mô hình '${model}' không khả dụng hoặc đã ngừng hoạt động trên Groq. Vui lòng mở 'Cấu hình' và bấm 'Tải danh sách model' để chọn mô hình khả dụng.`
+        );
+      }
+      throw new Error(msg);
     }
 
     let translation = data.choices?.[0]?.message?.content?.trim() || "";

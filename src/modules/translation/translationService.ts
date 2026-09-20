@@ -16,6 +16,7 @@ export interface TranslationServiceOptions {
 export class TranslationService {
   private googleAdapter: TranslationAdapter;
   private groqAdapter: TranslationAdapter;
+  private fetcher: typeof fetch;
 
   constructor(
     private config: TranslationServiceConfig,
@@ -23,6 +24,7 @@ export class TranslationService {
   ) {
     const rawFetcher = options.fetcher ?? fetch;
     const fetcher = (url: RequestInfo | URL, init?: RequestInit) => rawFetcher(url, init);
+    this.fetcher = fetcher;
     this.googleAdapter =
       options.googleAdapter ?? new GoogleTranslateAdapter(fetcher);
     this.groqAdapter =
@@ -32,6 +34,11 @@ export class TranslationService {
         model: () => this.config.getGroqModel(),
         fetcher,
       });
+  }
+
+  async fetchGroqModels(apiKeyOverride?: string) {
+    const apiKey = (apiKeyOverride ?? this.config.getGroqKey()).trim();
+    return GroqTranslateAdapter.fetchAvailableModels(apiKey, this.fetcher);
   }
 
   async translate(req: TranslationRequest): Promise<TranslationResult> {

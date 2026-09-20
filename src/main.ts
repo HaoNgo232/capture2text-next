@@ -68,6 +68,49 @@ document.addEventListener("DOMContentLoaded", () => {
   // Settings UI
   const apiKeyInput = document.getElementById("apiKeyInput") as HTMLInputElement;
   const modelSelect = document.getElementById("modelSelect") as HTMLSelectElement;
+  const fetchModelsBtn = document.getElementById("fetchModelsBtn") as HTMLButtonElement | null;
+  const fetchModelsBtnText = document.getElementById("fetchModelsBtnText") as HTMLElement | null;
+  const fetchModelsHint = document.getElementById("fetchModelsHint") as HTMLElement | null;
+  const GROQ_CACHED_MODELS_KEY = "capture2text_groq_cached_models";
+
+  function populateModelDropdown(models: string[], selectedModel?: string) {
+    const currentVal = selectedModel ?? modelSelect.value;
+    modelSelect.innerHTML = "";
+
+    const uniqueModels = Array.from(new Set(models));
+    if (currentVal && !uniqueModels.includes(currentVal)) {
+      uniqueModels.unshift(currentVal);
+    }
+
+    for (const m of uniqueModels) {
+      const opt = document.createElement("option");
+      opt.value = m;
+      opt.textContent = m;
+      modelSelect.appendChild(opt);
+    }
+
+    if (currentVal) {
+      modelSelect.value = currentVal;
+    }
+  }
+
+  function loadCachedModels() {
+    try {
+      const raw = localStorage.getItem(GROQ_CACHED_MODELS_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          populateModelDropdown(parsed, configStore.get("model"));
+          return;
+        }
+      }
+    } catch {
+      // ignore
+    }
+    const defaults = ["llama-3.1-8b-instant", "llama-3.3-70b-versatile", "llama-3.1-70b-versatile"];
+    populateModelDropdown(defaults, configStore.get("model"));
+  }
+
   const saveSettingsBtn = document.getElementById("saveSettingsBtn") as HTMLButtonElement;
   const autoTranslateCheckbox = document.getElementById("autoTranslateCheckbox") as HTMLInputElement;
   const startHiddenCheckbox = document.getElementById("startHiddenCheckbox") as HTMLInputElement | null;
@@ -593,6 +636,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Load Initial Configurations into UI
   apiKeyInput.value = configStore.get("apiKey");
+  loadCachedModels();
   modelSelect.value = configStore.get("model");
   providerSelect.value = configStore.get("provider");
   ocrLangSelect.value = configStore.get("ocrLang");
@@ -644,7 +688,9 @@ document.addEventListener("DOMContentLoaded", () => {
   if (cancelSettingsBtn) {
     cancelSettingsBtn.addEventListener("click", () => {
       apiKeyInput.value = configStore.get("apiKey");
+      loadCachedModels();
       modelSelect.value = configStore.get("model");
+      if (fetchModelsHint) fetchModelsHint.classList.add("hidden");
       if (startHiddenCheckbox) startHiddenCheckbox.checked = configStore.get("startHidden");
       if (showPreviewCheckbox) showPreviewCheckbox.checked = configStore.get("showPreview");
       autoTranslateCheckbox.checked = configStore.get("autoTranslate");
@@ -706,6 +752,61 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
+  if (fetchModelsBtn) {
+    fetchModelsBtn.addEventListener("click", async () => {
+      const apiKey = apiKeyInput.value.trim() || configStore.get("apiKey").trim();
+      if (!apiKey) {
+        if (fetchModelsHint) {
+          fetchModelsHint.className = "setting-hint error";
+          fetchModelsHint.textContent = "Vui lòng nhập Groq API Key trước khi tải danh sách.";
+          fetchModelsHint.classList.remove("hidden");
+        }
+        apiKeyInput.focus();
+        return;
+      }
+
+      fetchModelsBtn.disabled = true;
+      if (fetchModelsBtnText) fetchModelsBtnText.textContent = "Đang tải...";
+      if (fetchModelsHint) {
+        fetchModelsHint.className = "setting-hint";
+        fetchModelsHint.textContent = "Đang kết nối tới Groq API để lấy danh sách mô hình...";
+        fetchModelsHint.classList.remove("hidden");
+      }
+
+      try {
+        const models = await translationService.fetchGroqModels(apiKey);
+        if (models.length === 0) {
+          if (fetchModelsHint) {
+            fetchModelsHint.className = "setting-hint error";
+            fetchModelsHint.textContent = "Không tìm thấy mô hình nào khả dụng trên tài khoản của bạn.";
+          }
+        } else {
+          const ids = models.map((m) => m.id);
+          try {
+            localStorage.setItem(GROQ_CACHED_MODELS_KEY, JSON.stringify(ids));
+          } catch {
+            // ignore
+          }
+          const prev = modelSelect.value;
+          populateModelDropdown(ids, ids.includes(prev) ? prev : ids[0]);
+          if (fetchModelsHint) {
+            fetchModelsHint.className = "setting-hint success";
+            fetchModelsHint.textContent = `✓ Đã tìm thấy và cập nhật ${models.length} mô hình khả dụng!`;
+          }
+        }
+      } catch (err: unknown) {
+        if (fetchModelsHint) {
+          fetchModelsHint.className = "setting-hint error";
+          const msg = err instanceof Error ? err.message : String(err);
+          fetchModelsHint.textContent = `Lỗi: ${msg}`;
+        }
+      } finally {
+        fetchModelsBtn.disabled = false;
+        if (fetchModelsBtnText) fetchModelsBtnText.textContent = "Tải danh sách model";
+      }
+    });
+  }
+
   providerSelect.addEventListener("change", () => {
     const val = providerSelect.value as "google" | "groq";
     configStore.set("provider", val);
@@ -735,6 +836,7 @@ document.addEventListener("DOMContentLoaded", () => {
       autoTranslate: autoTranslateCheckbox.checked,
     });
 
+    if (fetchModelsHint) fetchModelsHint.classList.add("hidden");
     updateProviderUI();
     switchView("main");
   });

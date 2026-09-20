@@ -552,10 +552,41 @@ select, option {
   color: var(--text-secondary);
 }
 
-.setting-item small {
+.setting-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-fetch-models {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  font-size: 11px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.btn-fetch-models:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.setting-item small,
+.setting-hint {
   font-size: 11px;
   color: var(--text-tertiary);
   line-height: 1.4;
+}
+
+.setting-hint.success {
+  color: #4ade80;
+}
+
+.setting-hint.error {
+  color: #f87171;
 }
 
 .settings-checkbox-group {

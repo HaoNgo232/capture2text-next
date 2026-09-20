@@ -257,11 +257,20 @@
           </div>
 
           <div class="setting-item">
-            <label for="modelSelect">Mô hình AI</label>
+            <div class="setting-label-row">
+              <label for="modelSelect">Mô hình AI</label>
+              <button id="fetchModelsBtn" type="button" class="btn btn-secondary btn-sm btn-fetch-models" title="Tải danh sách mô hình khả dụng từ tài khoản Groq của bạn">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+                </svg>
+                <span id="fetchModelsBtnText">Tải danh sách model</span>
+              </button>
+            </div>
             <select id="modelSelect" class="select-box">
-              <option value="llama-3.3-70b-versatile" selected>Llama 3.3 70B Versatile</option>
-              <option value="llama-3.1-8b-instant">Llama 3.1 8B Instant</option>
+              <option value="llama-3.1-8b-instant" selected>Llama 3.1 8B Instant (Nhanh, phổ biến)</option>
+              <option value="llama-3.3-70b-versatile">Llama 3.3 70B Versatile</option>
             </select>
+            <small id="fetchModelsHint" class="setting-hint hidden"></small>
           </div>
 
           <div class="settings-checkbox-group">

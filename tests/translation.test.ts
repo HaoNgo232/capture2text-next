@@ -138,6 +138,84 @@ describe("GroqTranslateAdapter", () => {
       adapter.translate({ text: "Test", targetLang: "vi" })
     ).rejects.toThrow("Invalid API Key provided");
   });
+
+  it("provides actionable error message when Groq reports model does not exist or no access", async () => {
+    const fakeFetch = async () =>
+      new Response(
+        JSON.stringify({
+          error: {
+            message: "The model `llama-3.3-70b-versatile` does not exist or you do not have access to it.",
+          },
+        }),
+        { status: 404 }
+      );
+
+    const adapter = new GroqTranslateAdapter({
+      apiKey: "valid_key",
+      model: "llama-3.3-70b-versatile",
+      fetcher: fakeFetch as any,
+    });
+
+    expect(
+      adapter.translate({ text: "Test", targetLang: "vi" })
+    ).rejects.toThrow("không khả dụng hoặc đã ngừng hoạt động trên Groq");
+  });
+
+  describe("fetchAvailableModels", () => {
+    it("fetches active chat models from Groq API and filters out whisper and inactive models", async () => {
+      let capturedUrl = "";
+      let capturedAuth = "";
+
+      const fakeFetch = async (url: any, init: any) => {
+        capturedUrl = String(url);
+        capturedAuth = init.headers.Authorization;
+        return new Response(
+          JSON.stringify({
+            data: [
+              { id: "llama-3.3-70b-versatile", active: true, context_window: 131072 },
+              { id: "llama-3.1-8b-instant", active: true, context_window: 131072 },
+              { id: "whisper-large-v3", active: true, context_window: 448 },
+              { id: "llama-guard-3-8b", active: true, context_window: 8192 },
+              { id: "deprecated-old-model", active: false, context_window: 4096 },
+              { id: "mixtral-8x7b-32768", active: true, context_window: 32768 },
+            ],
+          })
+        );
+      };
+
+      const models = await GroqTranslateAdapter.fetchAvailableModels("gsk_valid_key", fakeFetch as any);
+
+      expect(capturedUrl).toBe("https://api.groq.com/openai/v1/models");
+      expect(capturedAuth).toBe("Bearer gsk_valid_key");
+      expect(models.map((m) => m.id)).toEqual([
+        "llama-3.1-8b-instant",
+        "llama-3.3-70b-versatile",
+        "mixtral-8x7b-32768",
+      ]);
+    });
+
+    it("throws a clear error when API key is missing", async () => {
+      expect(GroqTranslateAdapter.fetchAvailableModels("")).rejects.toThrow(
+        "Groq API Key is missing"
+      );
+    });
+
+    it("throws error with API response message when request fails", async () => {
+      const fakeFetch = async () =>
+        new Response(
+          JSON.stringify({
+            error: {
+              message: "Invalid API Key provided",
+            },
+          }),
+          { status: 401 }
+        );
+
+      expect(
+        GroqTranslateAdapter.fetchAvailableModels("bad_key", fakeFetch as any)
+      ).rejects.toThrow("Invalid API Key provided");
+    });
+  });
 });
 
 describe("TranslationService", () => {
@@ -210,5 +288,30 @@ describe("TranslationService", () => {
     expect(
       service.translate({ text: "Hello", targetLang: "vi" })
     ).rejects.toThrow("Vui lòng mở mục Cấu hình và nhập Groq API Key.");
+  });
+
+  it("fetchGroqModels delegates to GroqTranslateAdapter with configured key and fetcher", async () => {
+    const fakeFetch = async () =>
+      new Response(
+        JSON.stringify({
+          data: [
+            { id: "llama-3.1-8b-instant", active: true },
+            { id: "whisper-large-v3", active: true },
+          ],
+        })
+      );
+
+    const service = new TranslationService(
+      {
+        getProvider: () => "groq",
+        getGroqKey: () => "gsk_service_key",
+        getGroqModel: () => "llama-3.1-8b-instant",
+      },
+      { fetcher: fakeFetch as any }
+    );
+
+    const models = await service.fetchGroqModels();
+    expect(models.length).toBe(1);
+    expect(models[0].id).toBe("llama-3.1-8b-instant");
   });
 });

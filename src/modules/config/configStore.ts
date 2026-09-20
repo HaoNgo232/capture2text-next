@@ -22,7 +22,7 @@ export const STORAGE_KEYS = {
 
 export const DEFAULT_CONFIG: AppConfig = {
   apiKey: "",
-  model: "llama-3.3-70b-versatile",
+  model: "llama-3.1-8b-instant",
   provider: "google",
   ocrLang: "jpn",
   shortcut: "Alt+Q",
