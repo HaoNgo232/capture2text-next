@@ -805,6 +805,7 @@ kbd {
 }
 
 /* Fullscreen Snipping Overlay */
+html.snipping-active,
 body.snipping-active {
   background: transparent !important;
   padding: 0 !important;
@@ -824,7 +825,7 @@ body.snipping-active .card-app {
   height: 100vh;
   z-index: 99999;
   cursor: crosshair;
-  background: rgba(0, 0, 0, 0.35);
+  background: transparent;
   user-select: none;
 }
 

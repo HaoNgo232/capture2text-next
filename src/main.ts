@@ -327,6 +327,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const img = new Image();
       img.onload = async () => {
+        document.documentElement.classList.add("snipping-active");
         document.body.classList.add("snipping-active");
         try {
           await invoke("enter_snipping");
@@ -334,15 +335,19 @@ document.addEventListener("DOMContentLoaded", () => {
           console.warn("Enter snipping error:", err);
         }
 
-        startSnippingSelection(img);
+        requestAnimationFrame(() => {
+          startSnippingSelection(img);
+        });
       };
       img.onerror = () => {
         isCapturing = false;
+        document.documentElement.classList.remove("snipping-active");
         document.body.classList.remove("snipping-active");
       };
       img.src = dataUrl;
     } catch (err: unknown) {
       isCapturing = false;
+      document.documentElement.classList.remove("snipping-active");
       document.body.classList.remove("snipping-active");
       const errStr = err instanceof Error ? err.message : String(err);
       console.error("Lỗi chụp màn hình:", errStr);
@@ -351,9 +356,12 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function startSnippingSelection(fullScreenshot: HTMLImageElement | HTMLCanvasElement) {
+    const sourceWidth = "naturalWidth" in fullScreenshot ? fullScreenshot.naturalWidth : fullScreenshot.width;
+    const sourceHeight = "naturalHeight" in fullScreenshot ? fullScreenshot.naturalHeight : fullScreenshot.height;
+
     snippingOverlay.classList.remove("hidden");
-    snippingCanvas.width = window.innerWidth;
-    snippingCanvas.height = window.innerHeight;
+    snippingCanvas.width = sourceWidth;
+    snippingCanvas.height = sourceHeight;
 
     const sCtx = snippingCanvas.getContext("2d");
     if (!sCtx) {
@@ -361,14 +369,21 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    const sourceWidth = "naturalWidth" in fullScreenshot ? fullScreenshot.naturalWidth : fullScreenshot.width;
-    const sourceHeight = "naturalHeight" in fullScreenshot ? fullScreenshot.naturalHeight : fullScreenshot.height;
-
     let isDrawing = false;
     let startX = 0;
     let startY = 0;
     let currentX = 0;
     let currentY = 0;
+
+    function getCanvasCoords(e: MouseEvent): { x: number; y: number } {
+      const rect = snippingCanvas.getBoundingClientRect();
+      const scaleX = sourceWidth / (rect.width || window.innerWidth || 1);
+      const scaleY = sourceHeight / (rect.height || window.innerHeight || 1);
+      return {
+        x: Math.max(0, Math.min(sourceWidth, (e.clientX - rect.left) * scaleX)),
+        y: Math.max(0, Math.min(sourceHeight, (e.clientY - rect.top) * scaleY)),
+      };
+    }
 
     function draw() {
       if (!sCtx) return;
@@ -385,10 +400,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
         sCtx.drawImage(
           fullScreenshot,
-          (x / snippingCanvas.width) * sourceWidth,
-          (y / snippingCanvas.height) * sourceHeight,
-          (w / snippingCanvas.width) * sourceWidth,
-          (h / snippingCanvas.height) * sourceHeight,
+          x,
+          y,
+          w,
+          h,
           x,
           y,
           w,
@@ -396,8 +411,8 @@ document.addEventListener("DOMContentLoaded", () => {
         );
 
         sCtx.strokeStyle = "#FFFFFF";
-        sCtx.lineWidth = 1.5;
-        sCtx.setLineDash([4, 4]);
+        sCtx.lineWidth = Math.max(1.5, Math.round(2 * (sourceWidth / (snippingCanvas.clientWidth || sourceWidth))));
+        sCtx.setLineDash([6, 6]);
         sCtx.strokeRect(x, y, w, h);
       }
     }
@@ -406,16 +421,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const onMouseDown = (e: MouseEvent) => {
       isDrawing = true;
-      startX = e.clientX;
-      startY = e.clientY;
-      currentX = e.clientX;
-      currentY = e.clientY;
+      const coords = getCanvasCoords(e);
+      startX = coords.x;
+      startY = coords.y;
+      currentX = coords.x;
+      currentY = coords.y;
     };
 
     const onMouseMove = (e: MouseEvent) => {
       if (!isDrawing) return;
-      currentX = e.clientX;
-      currentY = e.clientY;
+      const coords = getCanvasCoords(e);
+      currentX = coords.x;
+      currentY = coords.y;
       draw();
     };
 
@@ -423,32 +440,29 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!isDrawing) return;
       isDrawing = false;
 
-      const x = Math.min(startX, currentX);
-      const y = Math.min(startY, currentY);
-      const w = Math.abs(currentX - startX);
-      const h = Math.abs(currentY - startY);
+      const x = Math.round(Math.min(startX, currentX));
+      const y = Math.round(Math.min(startY, currentY));
+      const w = Math.round(Math.abs(currentX - startX));
+      const h = Math.round(Math.abs(currentY - startY));
 
       await cleanup(false);
 
       if (w > 10 && h > 10) {
         const cropCanvas = document.createElement("canvas");
-        const scaleX = sourceWidth / snippingCanvas.width;
-        const scaleY = sourceHeight / snippingCanvas.height;
-
-        cropCanvas.width = Math.round(w * scaleX);
-        cropCanvas.height = Math.round(h * scaleY);
+        cropCanvas.width = w;
+        cropCanvas.height = h;
         const cropCtx = cropCanvas.getContext("2d");
         if (cropCtx) {
           cropCtx.drawImage(
             fullScreenshot,
-            Math.round(x * scaleX),
-            Math.round(y * scaleY),
-            cropCanvas.width,
-            cropCanvas.height,
+            x,
+            y,
+            w,
+            h,
             0,
             0,
-            cropCanvas.width,
-            cropCanvas.height
+            w,
+            h
           );
           await runOcrOnCanvas(cropCanvas, true);
         }
@@ -465,6 +479,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     async function cleanup(showWindow: boolean) {
       snippingOverlay.classList.add("hidden");
+      document.documentElement.classList.remove("snipping-active");
       document.body.classList.remove("snipping-active");
       window.removeEventListener("mousedown", onMouseDown);
       window.removeEventListener("mousemove", onMouseMove);
