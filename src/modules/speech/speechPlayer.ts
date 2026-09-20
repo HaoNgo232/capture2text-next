@@ -1,3 +1,5 @@
+import { invoke } from "@tauri-apps/api/core";
+
 /**
  * Splits text into chunks respecting sentence/clause punctuation and character limits (default 150 chars),
  * preventing Google TTS HTTP 400 rejection on large requests.
@@ -72,7 +74,9 @@ export class NaturalSpeechPlayer {
   constructor(
     private audioFactory: (url: string) => HTMLAudioElement = (url) => new Audio(url),
     private getSynthesis: () => SpeechSynthesis | undefined = () =>
-      typeof window !== "undefined" && "speechSynthesis" in window ? window.speechSynthesis : undefined
+      typeof window !== "undefined" && "speechSynthesis" in window ? window.speechSynthesis : undefined,
+    private synthesizer: (text: string, lang: string) => Promise<string> = (text, lang) =>
+      invoke<string>("synthesize_speech", { text, lang })
   ) {}
 
   isPlaying(): boolean {
@@ -116,7 +120,7 @@ export class NaturalSpeechPlayer {
 
     let chunkIdx = 0;
 
-    const playNextChunk = () => {
+    const playNextChunk = async () => {
       if (!this.active) return;
 
       if (chunkIdx >= chunks.length) {
@@ -125,19 +129,12 @@ export class NaturalSpeechPlayer {
       }
 
       const currentText = chunks[chunkIdx++];
-      const ttsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=${encodeURIComponent(
-        langCode
-      )}&client=tw-ob&q=${encodeURIComponent(currentText)}`;
-
-      let fallbackTriggered = false;
-      const handleTtsFailure = () => {
-        if (!this.active || fallbackTriggered) return;
-        fallbackTriggered = true;
-        this.playFallbackWebSpeech(currentText, langCode, () => playNextChunk());
-      };
 
       try {
-        const audio = this.audioFactory(ttsUrl);
+        const audioSrc = await this.synthesizer(currentText, langCode);
+        if (!this.active) return;
+
+        const audio = this.audioFactory(audioSrc);
         this.currentAudio = audio;
 
         audio.onended = () => {
@@ -145,14 +142,22 @@ export class NaturalSpeechPlayer {
           playNextChunk();
         };
 
-        audio.onerror = handleTtsFailure;
+        audio.onerror = () => {
+          if (!this.active) return;
+          this.playFallbackWebSpeech(currentText, langCode, () => playNextChunk());
+        };
 
         const playPromise = audio.play();
         if (playPromise !== undefined && typeof playPromise.catch === "function") {
-          playPromise.catch(handleTtsFailure);
+          playPromise.catch(() => {
+            if (!this.active) return;
+            this.playFallbackWebSpeech(currentText, langCode, () => playNextChunk());
+          });
         }
-      } catch {
-        handleTtsFailure();
+      } catch (err) {
+        console.warn("Backend TTS không phản hồi, thử Web Speech API:", err);
+        if (!this.active) return;
+        this.playFallbackWebSpeech(currentText, langCode, () => playNextChunk());
       }
     };
 
@@ -170,13 +175,23 @@ export class NaturalSpeechPlayer {
       const utterance = new SpeechSynthesisUtterance(text);
       const voices = synth.getVoices ? synth.getVoices() : [];
       const targetPrefix = langCode.toLowerCase().split("-")[0];
-      const matchedVoice = voices.find((v) =>
+      const matchingVoices = voices.filter((v) =>
         v.lang.toLowerCase().replace("_", "-").startsWith(targetPrefix)
       );
 
-      if (matchedVoice) {
-        utterance.voice = matchedVoice;
+      // Prioritize natural, neural, or online voices available on OS
+      const bestVoice =
+        matchingVoices.find((v) => /natural|neural|online/i.test(v.name)) ||
+        matchingVoices[0];
+
+      if (!bestVoice) {
+        // Prevent English default voice (e.g. Microsoft David) from mispronouncing foreign languages
+        console.warn(`Hệ điều hành chưa cài đặt voice cho ngôn ngữ: ${langCode}`);
+        onDone();
+        return;
       }
+
+      utterance.voice = bestVoice;
       utterance.lang = langCode;
 
       utterance.onend = () => onDone();

@@ -146,9 +146,53 @@ fn show_main_window(app: tauri::AppHandle) -> Result<(), String> {
 #[tauri::command]
 fn hide_main_window(app: tauri::AppHandle) -> Result<(), String> {
     if let Some(window) = app.get_webview_window("main") {
-        let _ = window.hide();
+        window.hide().map_err(|e| e.to_string())?;
     }
     Ok(())
+}
+
+#[tauri::command]
+async fn synthesize_speech(text: String, lang: String) -> Result<String, String> {
+    let clean_text = text.trim();
+    if clean_text.is_empty() {
+        return Err("Văn bản phát âm không được để trống".to_string());
+    }
+
+    let lang_code = if lang.trim().is_empty() { "vi" } else { lang.trim() };
+
+    let url = reqwest::Url::parse_with_params(
+        "https://translate.google.com/translate_tts",
+        &[
+            ("ie", "UTF-8"),
+            ("tl", lang_code),
+            ("client", "gtx"),
+            ("q", clean_text),
+        ],
+    ).map_err(|e| e.to_string())?;
+
+    let client = reqwest::Client::builder()
+        .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36")
+        .build()
+        .map_err(|e| e.to_string())?;
+
+    let response = client
+        .get(url)
+        .header("Referer", "https://translate.google.com/")
+        .send()
+        .await
+        .map_err(|e| format!("Lỗi kết nối máy chủ phát âm: {}", e))?;
+
+    if !response.status().is_success() {
+        return Err(format!("Máy chủ phát âm phản hồi mã lỗi: {}", response.status()));
+    }
+
+    let bytes = response
+        .bytes()
+        .await
+        .map_err(|e| format!("Lỗi nhận dữ liệu âm thanh: {}", e))?;
+
+    let encoded = base64::engine::general_purpose::STANDARD.encode(&bytes);
+    Ok(format!("data:audio/mp3;base64,{}", encoded))
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -224,7 +268,8 @@ pub fn run() {
             enter_snipping,
             exit_snipping,
             show_main_window,
-            hide_main_window
+            hide_main_window,
+            synthesize_speech
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
