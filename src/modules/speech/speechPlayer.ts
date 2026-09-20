@@ -75,8 +75,12 @@ export class NaturalSpeechPlayer {
     private audioFactory: (url: string) => HTMLAudioElement = (url) => new Audio(url),
     private getSynthesis: () => SpeechSynthesis | undefined = () =>
       typeof window !== "undefined" && "speechSynthesis" in window ? window.speechSynthesis : undefined,
-    private synthesizer: (text: string, lang: string) => Promise<string> = (text, lang) =>
-      invoke<string>("synthesize_speech", { text, lang })
+    private synthesizer: (text: string, lang: string) => string | Promise<string> = (text, lang) => {
+      if (typeof window !== "undefined" && (window as any).__TAURI_INTERNALS__) {
+        return invoke<string>("synthesize_speech", { text, lang });
+      }
+      return `https://translate.google.com/translate_tts?ie=UTF-8&tl=${encodeURIComponent(lang)}&client=gtx&q=${encodeURIComponent(text)}`;
+    }
   ) {}
 
   isPlaying(): boolean {
@@ -130,8 +134,12 @@ export class NaturalSpeechPlayer {
 
       const currentText = chunks[chunkIdx++];
 
-      try {
-        const audioSrc = await this.synthesizer(currentText, langCode);
+      const handleTtsFailure = () => {
+        if (!this.active) return;
+        this.playFallbackWebSpeech(currentText, langCode, () => playNextChunk());
+      };
+
+      const startPlayback = (audioSrc: string) => {
         if (!this.active) return;
 
         const audio = this.audioFactory(audioSrc);
@@ -143,21 +151,28 @@ export class NaturalSpeechPlayer {
         };
 
         audio.onerror = () => {
-          if (!this.active) return;
-          this.playFallbackWebSpeech(currentText, langCode, () => playNextChunk());
+          handleTtsFailure();
         };
 
         const playPromise = audio.play();
         if (playPromise !== undefined && typeof playPromise.catch === "function") {
           playPromise.catch(() => {
-            if (!this.active) return;
-            this.playFallbackWebSpeech(currentText, langCode, () => playNextChunk());
+            handleTtsFailure();
           });
+        }
+      };
+
+      try {
+        const audioSrcOrPromise = this.synthesizer(currentText, langCode);
+        if (typeof audioSrcOrPromise === "string") {
+          startPlayback(audioSrcOrPromise);
+        } else {
+          const audioSrc = await audioSrcOrPromise;
+          startPlayback(audioSrc);
         }
       } catch (err) {
         console.warn("Backend TTS không phản hồi, thử Web Speech API:", err);
-        if (!this.active) return;
-        this.playFallbackWebSpeech(currentText, langCode, () => playNextChunk());
+        handleTtsFailure();
       }
     };
 
@@ -184,14 +199,9 @@ export class NaturalSpeechPlayer {
         matchingVoices.find((v) => /natural|neural|online/i.test(v.name)) ||
         matchingVoices[0];
 
-      if (!bestVoice) {
-        // Prevent English default voice (e.g. Microsoft David) from mispronouncing foreign languages
-        console.warn(`Hệ điều hành chưa cài đặt voice cho ngôn ngữ: ${langCode}`);
-        onDone();
-        return;
+      if (bestVoice) {
+        utterance.voice = bestVoice;
       }
-
-      utterance.voice = bestVoice;
       utterance.lang = langCode;
 
       utterance.onend = () => onDone();
