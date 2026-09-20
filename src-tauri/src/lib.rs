@@ -17,13 +17,18 @@ fn focus_main_window(app: &tauri::AppHandle) {
     }
 }
 
+use std::sync::Mutex;
+use image::RgbaImage;
+
+static LAST_DESKTOP_IMAGE: Mutex<Option<RgbaImage>> = Mutex::new(None);
+
 #[tauri::command]
 fn capture_screen(app: tauri::AppHandle) -> Result<String, String> {
     // If main window is visible, hide it briefly so it is not captured in the screenshot
     if let Some(window) = app.get_webview_window("main") {
         if window.is_visible().unwrap_or(false) && !window.is_minimized().unwrap_or(false) {
             let _ = window.hide();
-            std::thread::sleep(std::time::Duration::from_millis(90));
+            std::thread::sleep(std::time::Duration::from_millis(15));
         }
     }
 
@@ -36,8 +41,56 @@ fn capture_screen(app: tauri::AppHandle) -> Result<String, String> {
 
     let image = primary.capture_image().map_err(|e| e.to_string())?;
 
+    // Cache lossless 1:1 raw RGBA image for pixel-perfect OCR cropping on mouse-up
+    if let Ok(mut guard) = LAST_DESKTOP_IMAGE.lock() {
+        *guard = Some(image.clone());
+    }
+
+    // Convert to RGB8 and encode fast JPEG (quality 85) for instant UI overlay display (<20ms)
+    let dynamic = image::DynamicImage::ImageRgba8(image);
+    let rgb = dynamic.to_rgb8();
+
     let mut buf = Cursor::new(Vec::new());
-    image
+    let mut encoder = image::codecs::jpeg::JpegEncoder::new_with_quality(&mut buf, 85);
+    encoder
+        .encode_image(&rgb)
+        .map_err(|e| e.to_string())?;
+
+    let encoded = base64::engine::general_purpose::STANDARD.encode(buf.get_ref());
+    Ok(format!("data:image/jpeg;base64,{}", encoded))
+}
+
+#[tauri::command]
+fn crop_captured_screen(
+    x: u32,
+    y: u32,
+    width: u32,
+    height: u32,
+) -> Result<String, String> {
+    if width == 0 || height == 0 {
+        return Err("Kích thước vùng chọn không hợp lệ".to_string());
+    }
+
+    let guard = LAST_DESKTOP_IMAGE
+        .lock()
+        .map_err(|e| format!("Lỗi lock bộ nhớ ảnh: {e}"))?;
+    let full_image = guard
+        .as_ref()
+        .ok_or_else(|| "Không tìm thấy ảnh chụp màn hình gần nhất".to_string())?;
+
+    let img_w = full_image.width();
+    let img_h = full_image.height();
+    if x >= img_w || y >= img_h {
+        return Err("Tọa độ vùng chọn nằm ngoài màn hình".to_string());
+    }
+    let actual_w = width.min(img_w - x);
+    let actual_h = height.min(img_h - y);
+
+    let cropped = image::imageops::crop_imm(full_image, x, y, actual_w, actual_h);
+
+    let mut buf = Cursor::new(Vec::new());
+    cropped
+        .to_image()
         .write_to(&mut buf, ImageFormat::Png)
         .map_err(|e| e.to_string())?;
 
@@ -260,6 +313,7 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             capture_screen,
+            crop_captured_screen,
             capture_region,
             register_trigger_shortcut,
             enter_snipping,

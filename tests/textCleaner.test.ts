@@ -30,8 +30,8 @@ describe("cleanRecognizedText", () => {
 });
 
 describe("applyRec601Threshold", () => {
-  it("binarizes high luminance pixels (> 180) to 255", () => {
-    // Pure white: R=255, G=255, B=255 => gray=255 (>180) => 255
+  it("converts pixels to Rec. 601 grayscale while preserving alpha", () => {
+    // Pure white: R=255, G=255, B=255 => gray=255
     const pixels = new Uint8ClampedArray([255, 255, 255, 255]);
     applyRec601Threshold(pixels);
     expect(pixels[0]).toBe(255);
@@ -39,37 +39,38 @@ describe("applyRec601Threshold", () => {
     expect(pixels[2]).toBe(255);
     expect(pixels[3]).toBe(255); // Alpha preserved
 
-    // Light gray: R=200, G=200, B=200 => gray=200 (>180) => 255
-    const light = new Uint8ClampedArray([200, 200, 200, 255]);
-    applyRec601Threshold(light);
-    expect(light[0]).toBe(255);
-    expect(light[1]).toBe(255);
-    expect(light[2]).toBe(255);
-  });
-
-  it("binarizes low luminance pixels (< 80) to 0", () => {
-    // Pure black: R=0, G=0, B=0 => gray=0 (<80) => 0
+    // Pure black: R=0, G=0, B=0 => gray=0
     const black = new Uint8ClampedArray([0, 0, 0, 255]);
     applyRec601Threshold(black);
     expect(black[0]).toBe(0);
     expect(black[1]).toBe(0);
     expect(black[2]).toBe(0);
-
-    // Dark gray: R=50, G=50, B=50 => gray=50 (<80) => 0
-    const dark = new Uint8ClampedArray([50, 50, 50, 255]);
-    applyRec601Threshold(dark);
-    expect(dark[0]).toBe(0);
-    expect(dark[1]).toBe(0);
-    expect(dark[2]).toBe(0);
   });
 
-  it("leaves mid-range luminance pixels (80 <= gray <= 180) at calculated grayscale value", () => {
-    // R=100, G=100, B=100 => gray = 100 (between 80 and 180) => 100
-    const mid = new Uint8ClampedArray([100, 100, 100, 255]);
-    applyRec601Threshold(mid);
-    expect(mid[0]).toBe(100);
-    expect(mid[1]).toBe(100);
-    expect(mid[2]).toBe(100);
+  it("stretches contrast for low-contrast text regions (e.g. dark mode IDE)", () => {
+    // Two pixels: dark background (lum=30) and dim text (lum=90), range = 60
+    const lowContrast = new Uint8ClampedArray([
+      30, 30, 30, 255,
+      90, 90, 90, 255,
+    ]);
+    applyRec601Threshold(lowContrast);
+
+    // After stretching: 30 maps to 0, 90 maps to 255
+    expect(lowContrast[0]).toBe(0);
+    expect(lowContrast[4]).toBe(255);
+  });
+
+  it("leaves standard wide-range grayscale intact without artificial clipping", () => {
+    // Pixels already spanning wide dynamic range (0 to 255)
+    const wide = new Uint8ClampedArray([
+      0, 0, 0, 255,
+      100, 100, 100, 255,
+      255, 255, 255, 255,
+    ]);
+    applyRec601Threshold(wide);
+    expect(wide[0]).toBe(0);
+    expect(wide[4]).toBe(100);
+    expect(wide[8]).toBe(255);
   });
 
   it("accurately computes Rec. 601 weighting (0.299*R + 0.587*G + 0.114*B)", () => {

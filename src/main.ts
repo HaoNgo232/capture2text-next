@@ -324,26 +324,23 @@ document.addEventListener("DOMContentLoaded", () => {
     isCapturing = true;
 
     try {
-      // 1. Hide main window so it is not in the screenshot
-      await invoke("hide_main_window");
-
-      // 2. Capture clean desktop snapshot at t=0 BEFORE overlay
-      // This prevents video hardware overlay (MPO) from turning black!
+      // 1. Capture clean desktop snapshot at t=0 BEFORE overlay
+      // This caches 100% lossless RGBA in Rust backend and returns a lightweight fast JPEG (<20ms) for UI overlay
       const desktopDataUrl = await invoke<string>("capture_screen");
 
       const desktopImg = new Image();
-      await new Promise<void>((resolve, reject) => {
+      const loadPromise = new Promise<void>((resolve, reject) => {
         desktopImg.onload = () => resolve();
         desktopImg.onerror = () => reject(new Error("Không thể nạp ảnh chụp màn hình"));
-        desktopImg.src = desktopDataUrl;
       });
+      desktopImg.src = desktopDataUrl;
 
-      // 3. Prepare fullscreen canvas overlay
+      // 2. Prepare fullscreen canvas overlay and enter snipping concurrently with image decoding
       document.documentElement.classList.add("snipping-active");
       document.body.classList.add("snipping-active");
       snippingOverlay.classList.remove("hidden");
 
-      await invoke("enter_snipping");
+      await Promise.all([loadPromise, invoke("enter_snipping")]);
 
       startSnippingSelection(desktopImg);
     } catch (err: unknown) {
@@ -490,10 +487,37 @@ document.addEventListener("DOMContentLoaded", () => {
           cropCanvas.width = pw;
           cropCanvas.height = ph;
           const ctx = cropCanvas.getContext("2d");
-          if (ctx) {
-            ctx.drawImage(desktopImg, px, py, pw, ph, 0, 0, pw, ph);
-            await runOcrOnCanvas(cropCanvas, true);
+
+          let loadedLossless = false;
+          try {
+            // Retrieve pixel-perfect lossless PNG crop directly from Rust in-memory buffer (<0.5ms)
+            const losslessDataUrl = await invoke<string>("crop_captured_screen", {
+              x: px,
+              y: py,
+              width: pw,
+              height: ph,
+            });
+            const cropImg = new Image();
+            await new Promise<void>((resolve, reject) => {
+              cropImg.onload = () => resolve();
+              cropImg.onerror = () => reject(new Error("Lỗi tải crop lossless"));
+              cropImg.src = losslessDataUrl;
+            });
+            if (ctx) {
+              cropCanvas.width = cropImg.naturalWidth || pw;
+              cropCanvas.height = cropImg.naturalHeight || ph;
+              ctx.drawImage(cropImg, 0, 0);
+              loadedLossless = true;
+            }
+          } catch (backendErr) {
+            console.warn("Backend crop fallback to canvas:", backendErr);
           }
+
+          if (!loadedLossless && ctx) {
+            ctx.drawImage(desktopImg, px, py, pw, ph, 0, 0, pw, ph);
+          }
+
+          await runOcrOnCanvas(cropCanvas, true);
         } catch (err: unknown) {
           const errStr = err instanceof Error ? err.message : String(err);
           console.error("Lỗi xử lý crop:", errStr);
