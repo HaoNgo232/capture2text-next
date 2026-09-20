@@ -13,9 +13,13 @@
     "withGlobalTauri": true,
     "windows": [
       {
-        "title": "capture2text-next",
-        "width": 800,
-        "height": 600
+        "label": "main",
+        "title": "Capture2Text Next",
+        "width": 820,
+        "height": 620,
+        "minWidth": 640,
+        "minHeight": 500,
+        "center": true
       }
     ],
     "security": {

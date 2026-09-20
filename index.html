@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <link rel="stylesheet" href="/src/styles.css" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Capture2Text NextGen - Classic Card</title>
+    <title>Capture2Text Next</title>
     <!-- Tesseract.js WebAssembly OCR Engine -->
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <script type="module" src="/src/main.ts" defer></script>
@@ -12,149 +12,352 @@
 
   <body>
     <div class="card-app">
-      <!-- Card Header -->
+      <!-- Minimalist Clean Header -->
       <header class="card-header">
         <div class="brand">
-          <span class="logo-icon">🔍</span>
-          <div>
-            <h1 class="title">Capture2Text Next</h1>
-            <span class="subtitle">OCR Engine + Groq Llama 3.3 & Google</span>
+          <div class="logo-mark">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="4"></rect>
+              <path d="M7 8h10"></path>
+              <path d="M7 12h7"></path>
+              <path d="M7 16h4"></path>
+            </svg>
           </div>
+          <span class="title">Capture2Text</span>
         </div>
-        <div class="status-badge" id="statusBadge">⚡ Ready</div>
+
+        <div class="header-actions">
+          <button id="minimizeToTrayBtn" class="btn btn-ghost btn-sm" title="Thu nhỏ vào khay hệ thống (chạy ngầm)" aria-label="Chạy ngầm">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="4 14 10 14 10 20"></polyline>
+              <polyline points="20 10 14 10 14 4"></polyline>
+              <line x1="14" y1="10" x2="21" y2="3"></line>
+              <line x1="3" y1="21" x2="10" y2="14"></line>
+            </svg>
+            <span>Chạy ngầm</span>
+          </button>
+
+          <button id="shortcutsBtn" class="btn btn-ghost btn-sm" title="Danh sách phím tắt" aria-label="Phím tắt">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="4" width="20" height="16" rx="2" ry="2"></rect>
+              <line x1="6" y1="8" x2="6.01" y2="8"></line>
+              <line x1="10" y1="8" x2="10.01" y2="8"></line>
+              <line x1="14" y1="8" x2="14.01" y2="8"></line>
+              <line x1="18" y1="8" x2="18.01" y2="8"></line>
+              <line x1="6" y1="12" x2="6.01" y2="12"></line>
+              <line x1="10" y1="12" x2="10.01" y2="12"></line>
+              <line x1="14" y1="12" x2="14.01" y2="12"></line>
+              <line x1="18" y1="12" x2="18.01" y2="12"></line>
+              <line x1="7" y1="16" x2="17" y2="16"></line>
+            </svg>
+            <span>Phím tắt</span>
+          </button>
+
+          <button id="toggleSettingsBtn" class="btn btn-ghost btn-sm" title="Cấu hình hệ thống" aria-label="Cấu hình">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
+            <span>Cấu hình</span>
+          </button>
+        </div>
       </header>
 
-      <!-- Main Translation Body -->
-      <main class="card-body">
-        <!-- Quick Action Toolbar: Screen Capture & Paste -->
-        <div class="ocr-toolbar">
-          <button id="captureBtn" class="btn btn-capture">
-            <span>📸 Chụp Vùng Màn Hình</span>
-          </button>
-          <div class="select-group">
-            <label for="ocrLangSelect">Ngôn ngữ OCR:</label>
-            <select id="ocrLangSelect" class="select-box">
-              <option value="jpn" selected>🇯🇵 Tiếng Nhật (jpn)</option>
-              <option value="eng">🇬🇧 Tiếng Anh (eng)</option>
-              <option value="vie">🇻🇳 Tiếng Việt (vie)</option>
-              <option value="chi_sim">🇨🇳 Tiếng Trung (chi_sim)</option>
+      <!-- Main Translation View -->
+      <main id="mainView" class="card-body view-section">
+        <!-- Unified Language & Provider Control Strip -->
+        <div class="control-strip">
+          <div class="lang-direction-group">
+            <select id="ocrLangSelect" class="select-box select-lang" aria-label="Ngôn ngữ nhận diện">
+              <option value="jpn" selected>Tiếng Nhật (JA)</option>
+              <option value="eng">Tiếng Anh (EN)</option>
+              <option value="vie">Tiếng Việt (VI)</option>
+              <option value="chi_sim">Tiếng Trung (ZH)</option>
+            </select>
+
+            <div class="direction-separator" aria-hidden="true">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+                <polyline points="12 5 19 12 12 19"></polyline>
+              </svg>
+            </div>
+
+            <select id="targetLangSelect" class="select-box select-lang" aria-label="Ngôn ngữ dịch sang">
+              <option value="vi" selected>Tiếng Việt (VI)</option>
+              <option value="en">Tiếng Anh (EN)</option>
+              <option value="ja">Tiếng Nhật (JA)</option>
+              <option value="zh-CN">Tiếng Trung (ZH)</option>
+              <option value="de">Tiếng Đức (DE)</option>
+              <option value="fr">Tiếng Pháp (FR)</option>
             </select>
           </div>
-        </div>
 
-        <!-- Image Snippet Preview (Shown when an image is captured/pasted) -->
-        <div id="imagePreviewContainer" class="image-preview-container hidden">
-          <div class="preview-header">
-            <span>Ảnh vùng quét (Đã xử lý 300 DPI):</span>
-            <button id="clearImageBtn" class="btn-icon">✕</button>
-          </div>
-          <canvas id="previewCanvas" class="preview-canvas"></canvas>
-          <div id="ocrProgressBar" class="ocr-progress-bar hidden">
-            <div id="ocrProgressFill" class="ocr-progress-fill"></div>
-            <span id="ocrProgressText" class="ocr-progress-text">Đang nhận diện chữ... 0%</span>
+          <div class="provider-wrapper">
+            <div class="provider-pill">
+              <span id="providerIcon" class="provider-icon" aria-hidden="true"></span>
+              <select id="providerSelect" class="select-box select-provider" aria-label="Động cơ dịch">
+                <option value="google" selected>Google</option>
+                <option value="groq">Groq AI</option>
+              </select>
+            </div>
           </div>
         </div>
 
-        <!-- Source Text Box -->
-        <div class="text-group">
-          <div class="label-row">
-            <span class="label">Văn bản nhận diện (OCR / Source):</span>
-            <span class="tip-hint">Hoặc nhấn Ctrl+V để dán ảnh màn hình</span>
+        <!-- Source Text Box (Bento Card) -->
+        <section class="bento-box source-box">
+          <div class="box-header">
+            <span class="section-label">Văn bản gốc</span>
+            <div class="box-actions">
+              <button id="captureBtn" class="btn btn-secondary btn-sm" title="Chụp vùng màn hình">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                  <circle cx="12" cy="13" r="4"></circle>
+                </svg>
+                <span>Chụp màn hình</span>
+              </button>
+              <button id="sourceSpeechBtn" class="btn btn-secondary btn-sm" title="Phát âm văn bản gốc">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                  <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                  <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+                </svg>
+                <span>Phát âm</span>
+              </button>
+              <button id="clearSourceBtn" class="btn btn-icon-only" title="Xóa nội dung" aria-label="Xóa">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
           </div>
+
+          <!-- Image Snippet Preview -->
+          <div id="imagePreviewContainer" class="image-preview-container hidden">
+            <div class="preview-header">
+              <span class="preview-title">Ảnh quét đã tiền xử lý</span>
+              <button id="clearImageBtn" class="btn-icon-only btn-preview-close" title="Đóng ảnh" aria-label="Đóng ảnh">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+            <div class="preview-canvas-wrapper">
+              <canvas id="previewCanvas" class="preview-canvas"></canvas>
+            </div>
+            <div id="ocrProgressBar" class="ocr-progress-bar hidden">
+              <div id="ocrProgressFill" class="ocr-progress-fill"></div>
+              <span id="ocrProgressText" class="ocr-progress-text">Đang nhận diện chữ... 0%</span>
+            </div>
+          </div>
+
           <textarea
             id="sourceInput"
             class="textarea source-area"
             rows="3"
-            placeholder="Nhấn 'Chụp Vùng Màn Hình' hoặc dán ảnh (Ctrl+V) / gõ chữ vào đây..."
+            placeholder="Dán ảnh (Ctrl+V), chụp màn hình hoặc nhập văn bản cần dịch..."
           >私たちはオープンソースソフトウェアの力で、世界中の言葉の壁を打ち破ります。</textarea>
-        </div>
+        </section>
 
-        <!-- Action Control Bar -->
-        <div class="controls-row">
-          <div class="select-group">
-            <label for="providerSelect">Bộ dịch:</label>
-            <select id="providerSelect" class="select-box">
-              <option value="google" selected>🌐 Google Translate (Free)</option>
-              <option value="groq">⚡ Groq (Llama 3.3 AI)</option>
-            </select>
-          </div>
-
-          <div class="select-group">
-            <label for="targetLangSelect">Dịch sang:</label>
-            <select id="targetLangSelect" class="select-box">
-              <option value="vi" selected>🇻🇳 Tiếng Việt</option>
-              <option value="en">🇬🇧 English</option>
-              <option value="ja">🇯🇵 Japanese</option>
-              <option value="zh-CN">🇨🇳 Chinese</option>
-              <option value="de">🇩🇪 German</option>
-              <option value="fr">🇫🇷 French</option>
-            </select>
-          </div>
-
-          <button id="translateBtn" class="btn btn-primary">
-            <span>Dịch Ngay</span>
+        <!-- Translation Execution & Latency Bar -->
+        <div class="action-divider">
+          <button id="translateBtn" class="btn btn-primary btn-translate">
+            <span>Dịch</span>
+            <kbd class="btn-kbd">Ctrl + Enter</kbd>
           </button>
-        </div>
-
-        <!-- Translation Result Box -->
-        <div class="text-group">
-          <div class="label-row">
-            <span class="label">Bản dịch (Translation):</span>
+          <div class="latency-indicator">
             <span class="latency-counter" id="latencyDisplay">240ms</span>
           </div>
-          <div id="targetDisplay" class="textarea target-area">
-            Chúng tôi phá vỡ mọi rào cản ngôn ngữ trên toàn thế giới bằng sức mạnh của phần mềm mã nguồn mở.
+        </div>
+
+        <!-- Target Result Box (Bento Card) -->
+        <section class="bento-box target-box">
+          <div class="box-header">
+            <span class="section-label">Bản dịch</span>
+            <div class="box-actions">
+              <button id="copyBtn" class="btn btn-secondary btn-sm" title="Sao chép kết quả">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+                <span>Sao chép</span>
+              </button>
+              <button id="speechBtn" class="btn btn-secondary btn-sm" title="Phát âm văn bản">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                  <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                  <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+                </svg>
+                <span>Phát âm</span>
+              </button>
+            </div>
+          </div>
+
+          <div id="targetDisplay" class="textarea target-area" tabindex="0">Chúng tôi phá vỡ mọi rào cản ngôn ngữ trên toàn thế giới bằng sức mạnh của phần mềm mã nguồn mở.</div>
+        </section>
+      </main>
+
+      <!-- Dedicated Settings View (Hides Main View when opened) -->
+      <section id="settingsView" class="card-body view-section hidden" aria-label="Cài đặt">
+        <div class="view-header">
+          <button id="backFromSettingsBtn" class="btn btn-ghost btn-sm btn-back" title="Quay lại giao diện dịch">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="19" y1="12" x2="5" y2="12"></line>
+              <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+            <span>Quay lại</span>
+          </button>
+          <div class="view-title-group">
+            <h2 class="view-heading">Cấu hình hệ thống & API</h2>
+            <span class="view-subheading">Lưu trữ cục bộ an toàn trên máy</span>
           </div>
         </div>
 
-        <!-- Action Buttons -->
-        <div class="card-actions">
-          <div class="left-actions">
-            <button id="copyBtn" class="btn btn-secondary">📋 Sao chép</button>
-            <button id="speechBtn" class="btn btn-secondary">🔊 Phát âm</button>
-          </div>
-          <button id="toggleSettingsBtn" class="btn btn-ghost">⚙️ Cấu hình</button>
-        </div>
-
-        <!-- Settings Panel (Collapsible) -->
-        <div id="settingsPanel" class="settings-panel hidden">
-          <h3>Cấu hình Dịch Thuật & OCR</h3>
+        <div class="bento-box settings-bento">
           <div class="setting-item">
-            <label for="apiKeyInput">Groq API Key (gsk_...):</label>
+            <label for="apiKeyInput">Groq API Key</label>
             <input
               type="password"
               id="apiKeyInput"
               class="input-box"
-              placeholder="Nhập API Key từ console.groq.com..."
+              placeholder="gsk_..."
+              spellcheck="false"
+              autocomplete="off"
             />
-            <small>Key được lưu an toàn trong máy của bạn (localStorage).</small>
+            <small>Khóa API miễn phí từ console.groq.com để dùng mô hình Llama 3.3 siêu tốc.</small>
           </div>
-          <div class="setting-item">
-            <label for="modelSelect">Mô hình AI:</label>
-            <select id="modelSelect" class="select-box">
-              <option value="llama-3.3-70b-versatile" selected>Llama 3.3 70B Versatile (Khuyên dùng - Dịch thông minh)</option>
-              <option value="llama-3.1-8b-instant">Llama 3.1 8B Instant (Siêu tốc - 840 TPS)</option>
-            </select>
-          </div>
-          <div class="setting-item">
-            <label>
-              <input type="checkbox" id="autoTranslateCheckbox" checked />
-              Tự động dịch ngay sau khi OCR xong
-            </label>
-          </div>
-          <button id="saveSettingsBtn" class="btn btn-primary btn-block">Lưu Cấu Hình</button>
-        </div>
-      </main>
 
-      <!-- Card Footer -->
-      <footer class="card-footer">
-        <span>Mẹo: Bấm <b>Win + Shift + S</b> chụp ảnh rồi vào đây bấm <b>Ctrl + V</b> để OCR siêu nhanh!</span>
-      </footer>
+          <div class="setting-item">
+            <label for="shortcutPresetSelect">Phím tắt kích hoạt toàn cục (Global Hotkey)</label>
+            <div class="shortcut-input-group">
+              <select id="shortcutPresetSelect" class="select-box select-shortcut-preset" aria-label="Mẫu phím tắt">
+                <option value="Alt+Q" selected>Alt + Q (Mặc định Capture2Text)</option>
+                <option value="Ctrl+Shift+S">Ctrl + Shift + S (Chuẩn chụp ảnh)</option>
+                <option value="Ctrl+Shift+Q">Ctrl + Shift + Q</option>
+                <option value="Alt+D">Alt + D</option>
+                <option value="F4">F4</option>
+                <option value="custom">Tùy chỉnh bằng phím...</option>
+              </select>
+              <input
+                type="text"
+                id="customShortcutInput"
+                class="input-box input-shortcut hidden"
+                placeholder="Bấm Ghi phím..."
+                readonly
+                spellcheck="false"
+              />
+              <button id="recordShortcutBtn" type="button" class="btn btn-secondary btn-sm" title="Ghi phím bằng cách nhấn tổ hợp phím trên bàn phím">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+                <span>Ghi phím</span>
+              </button>
+            </div>
+            <small id="shortcutHint">Kích hoạt nhanh nhận diện OCR và dịch từ bất kỳ đâu, ngay cả khi ứng dụng đang chạy ngầm.</small>
+          </div>
+
+          <div class="setting-grid">
+            <div class="setting-item">
+              <label for="modelSelect">Mô hình AI</label>
+              <select id="modelSelect" class="select-box">
+                <option value="llama-3.3-70b-versatile" selected>Llama 3.3 70B Versatile</option>
+                <option value="llama-3.1-8b-instant">Llama 3.1 8B Instant</option>
+              </select>
+            </div>
+
+            <div class="setting-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="autoTranslateCheckbox" checked />
+                <span>Tự động dịch sau khi quét OCR</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="view-footer-actions">
+          <button id="saveSettingsBtn" class="btn btn-primary btn-save">Lưu cấu hình</button>
+          <button id="cancelSettingsBtn" class="btn btn-secondary btn-sm">Hủy</button>
+        </div>
+      </section>
+
+      <!-- Dedicated Shortcuts View (Hides Main View when opened) -->
+      <section id="shortcutsView" class="card-body view-section hidden" aria-label="Phím tắt">
+        <div class="view-header">
+          <button id="backFromShortcutsBtn" class="btn btn-ghost btn-sm btn-back" title="Quay lại giao diện dịch">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="19" y1="12" x2="5" y2="12"></line>
+              <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+            <span>Quay lại</span>
+          </button>
+          <div class="view-title-group">
+            <h2 class="view-heading">Phím tắt thao tác nhanh</h2>
+            <span class="view-subheading">Điều khiển ứng dụng tốc độ cao</span>
+          </div>
+        </div>
+
+        <div class="bento-box shortcuts-bento">
+          <div class="shortcut-row highlight-row">
+            <div class="shortcut-desc">
+              <span class="shortcut-title">Kích hoạt chụp & dịch toàn cục</span>
+              <span class="shortcut-detail">Chụp vùng màn hình bất kỳ đâu ngay cả khi app đang chạy ngầm</span>
+            </div>
+            <div class="shortcut-keys" id="currentGlobalShortcutDisplay">
+              <kbd>Alt</kbd> + <kbd>Q</kbd>
+            </div>
+          </div>
+
+          <div class="shortcut-row">
+            <div class="shortcut-desc">
+              <span class="shortcut-title">Khay hệ thống (System Tray)</span>
+              <span class="shortcut-detail">Click chuột trái mở/ẩn giao diện, chuột phải mở menu tùy chọn</span>
+            </div>
+            <div class="shortcut-keys">
+              <kbd>System Tray</kbd>
+            </div>
+          </div>
+
+          <div class="shortcut-row">
+            <div class="shortcut-desc">
+              <span class="shortcut-title">Dán ảnh màn hình</span>
+              <span class="shortcut-detail">Dán ảnh trong clipboard vào nhận diện</span>
+            </div>
+            <div class="shortcut-keys">
+              <kbd>Ctrl</kbd> + <kbd>V</kbd>
+            </div>
+          </div>
+
+          <div class="shortcut-row">
+            <div class="shortcut-desc">
+              <span class="shortcut-title">Dịch nhanh tức thì</span>
+              <span class="shortcut-detail">Dịch ngay khi đang nhập tại ô văn bản nguồn</span>
+            </div>
+            <div class="shortcut-keys">
+              <kbd>Ctrl</kbd> + <kbd>Enter</kbd>
+            </div>
+          </div>
+
+          <div class="shortcut-row">
+            <div class="shortcut-desc">
+              <span class="shortcut-title">Thoát / Đóng màn hình</span>
+              <span class="shortcut-detail">Trở về giao diện dịch hoặc hủy vùng kéo chụp</span>
+            </div>
+            <div class="shortcut-keys">
+              <kbd>Esc</kbd>
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
 
-    <!-- Snipping Overlay (Fullscreen when capturing screen) -->
-    <div id="snippingOverlay" class="snipping-overlay hidden">
-      <div class="snipping-instructions">Kéo chuột vẽ khung chữ nhật quanh đoạn chữ cần dịch • Nhấn ESC để hủy</div>
+    <!-- Fullscreen Snipping Overlay -->
+    <div id="snippingOverlay" class="snipping-overlay hidden" aria-hidden="true">
+      <div class="snipping-instructions">
+        <span>Kéo chuột để chọn vùng nhận diện</span>
+        <kbd class="snipping-kbd">Esc để hủy</kbd>
+      </div>
       <canvas id="snippingCanvas" class="snipping-canvas"></canvas>
     </div>
   </body>
