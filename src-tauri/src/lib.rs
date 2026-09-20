@@ -123,15 +123,12 @@ fn enter_snipping(app: tauri::AppHandle) -> Result<(), String> {
 #[tauri::command]
 fn exit_snipping(app: tauri::AppHandle, show_window: bool) -> Result<(), String> {
     if let Some(window) = app.get_webview_window("main") {
+        let _ = window.set_always_on_top(false);
+        let _ = window.set_fullscreen(false);
         if show_window {
-            let _ = window.set_always_on_top(false);
-            let _ = window.set_fullscreen(false);
-            let _ = window.show();
-            let _ = window.set_focus();
+            focus_main_window(&app);
         } else {
             let _ = window.hide();
-            let _ = window.set_always_on_top(false);
-            let _ = window.set_fullscreen(false);
         }
     }
     Ok(())
@@ -256,9 +253,9 @@ pub fn run() {
         })
         .on_window_event(|window, event| {
             if let WindowEvent::CloseRequested { api, .. } = event {
-                // Keep app running in background / tray when window is closed
-                let _ = window.hide();
+                // Prevent window destruction and hide cleanly to system tray
                 api.prevent_close();
+                let _ = window.hide();
             }
         })
         .invoke_handler(tauri::generate_handler![
@@ -274,3 +271,4 @@ pub fn run() {
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
+
