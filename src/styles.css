@@ -815,6 +815,8 @@ body.snipping-active {
 
 body.snipping-active .card-app {
   display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
 }
 
 .snipping-overlay {

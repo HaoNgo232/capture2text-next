@@ -327,7 +327,14 @@ document.addEventListener("DOMContentLoaded", () => {
       document.body.classList.add("snipping-active");
       snippingOverlay.classList.remove("hidden");
 
-      // Enter fullscreen transparent mode immediately (<10ms)
+      // Ensure browser compositor has painted transparent frame before making window visible
+      await new Promise<void>((resolve) => {
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => resolve());
+        });
+      });
+
+      // Enter fullscreen transparent mode immediately
       await invoke("enter_snipping");
 
       startSnippingSelection();

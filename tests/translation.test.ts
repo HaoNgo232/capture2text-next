@@ -33,6 +33,25 @@ describe("GoogleTranslateAdapter", () => {
       adapter.translate({ text: "Hello", targetLang: "vi" })
     ).rejects.toThrow("Lỗi kết nối Google Translate (HTTP 429)");
   });
+
+  it("safely invokes fetch when bound to native window context (prevents Illegal invocation)", async () => {
+    const nativeWindowFetch = function (this: any) {
+      if (this && this !== globalThis) {
+        throw new TypeError("Failed to execute 'fetch' on 'Window': Illegal invocation");
+      }
+      return Promise.resolve(
+        new Response(
+          JSON.stringify([
+            [["Xin chào", "Hello", null, null, 1]],
+          ])
+        )
+      );
+    };
+
+    const adapter = new GoogleTranslateAdapter(nativeWindowFetch as any);
+    const result = await adapter.translate({ text: "Hello", targetLang: "vi" });
+    expect(result).toBe("Xin chào");
+  });
 });
 
 describe("GroqTranslateAdapter", () => {
@@ -72,6 +91,30 @@ describe("GroqTranslateAdapter", () => {
     expect(capturedBody.model).toBe("llama-3.3-70b-versatile");
     expect(capturedBody.messages[0].content).toContain("vi");
     expect(capturedBody.messages[1].content).toBe("Break language barriers");
+  });
+
+  it("safely invokes fetch when bound to native window context (prevents Illegal invocation)", async () => {
+    const nativeWindowFetch = function (this: any) {
+      if (this && this !== globalThis) {
+        throw new TypeError("Failed to execute 'fetch' on 'Window': Illegal invocation");
+      }
+      return Promise.resolve(
+        new Response(
+          JSON.stringify({
+            choices: [{ message: { content: "Xin chào" } }],
+          })
+        )
+      );
+    };
+
+    const adapter = new GroqTranslateAdapter({
+      apiKey: "gsk_test_123",
+      model: "llama-3.3-70b-versatile",
+      fetcher: nativeWindowFetch as any,
+    });
+
+    const result = await adapter.translate({ text: "Hello", targetLang: "vi" });
+    expect(result).toBe("Xin chào");
   });
 
   it("throws error with API error message if provided by Groq", async () => {

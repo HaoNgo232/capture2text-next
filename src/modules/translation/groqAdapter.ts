@@ -25,7 +25,8 @@ export class GroqTranslateAdapter implements TranslationAdapter {
   constructor(options: GroqAdapterOptions) {
     this.getApiKey = typeof options.apiKey === "function" ? options.apiKey : () => options.apiKey as string;
     this.getModel = typeof options.model === "function" ? options.model : () => options.model as string;
-    this.fetcher = options.fetcher ?? fetch;
+    const rawFetcher = options.fetcher ?? fetch;
+    this.fetcher = (url: RequestInfo | URL, init?: RequestInit) => rawFetcher(url, init);
   }
 
   async translate(req: TranslationRequest): Promise<string> {

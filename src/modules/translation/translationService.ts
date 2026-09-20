@@ -21,7 +21,8 @@ export class TranslationService {
     private config: TranslationServiceConfig,
     options: TranslationServiceOptions = {}
   ) {
-    const fetcher = options.fetcher ?? fetch;
+    const rawFetcher = options.fetcher ?? fetch;
+    const fetcher = (url: RequestInfo | URL, init?: RequestInit) => rawFetcher(url, init);
     this.googleAdapter =
       options.googleAdapter ?? new GoogleTranslateAdapter(fetcher);
     this.groqAdapter =

@@ -1,7 +1,11 @@
 import type { TranslationAdapter, TranslationRequest } from "./types";
 
 export class GoogleTranslateAdapter implements TranslationAdapter {
-  constructor(private fetcher: typeof fetch = fetch) {}
+  private fetcher: typeof fetch;
+
+  constructor(fetcher: typeof fetch = fetch) {
+    this.fetcher = (url: RequestInfo | URL, init?: RequestInit) => fetcher(url, init);
+  }
 
   async translate(req: TranslationRequest): Promise<string> {
     const sourceLang = req.sourceLang || "auto";

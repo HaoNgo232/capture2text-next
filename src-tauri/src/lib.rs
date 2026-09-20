@@ -112,10 +112,9 @@ fn register_trigger_shortcut(app: tauri::AppHandle, shortcut: String) -> Result<
 #[tauri::command]
 fn enter_snipping(app: tauri::AppHandle) -> Result<(), String> {
     if let Some(window) = app.get_webview_window("main") {
-        let _ = window.show();
-        let _ = window.unminimize();
         let _ = window.set_fullscreen(true);
         let _ = window.set_always_on_top(true);
+        let _ = window.show();
         let _ = window.set_focus();
     }
     Ok(())
@@ -124,14 +123,15 @@ fn enter_snipping(app: tauri::AppHandle) -> Result<(), String> {
 #[tauri::command]
 fn exit_snipping(app: tauri::AppHandle, show_window: bool) -> Result<(), String> {
     if let Some(window) = app.get_webview_window("main") {
-        let _ = window.set_always_on_top(false);
-        let _ = window.set_fullscreen(false);
         if show_window {
+            let _ = window.set_always_on_top(false);
+            let _ = window.set_fullscreen(false);
             let _ = window.show();
-            let _ = window.unminimize();
             let _ = window.set_focus();
         } else {
             let _ = window.hide();
+            let _ = window.set_always_on_top(false);
+            let _ = window.set_fullscreen(false);
         }
     }
     Ok(())
