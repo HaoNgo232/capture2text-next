@@ -436,10 +436,12 @@ select, option {
   background: var(--border);
   border-radius: 9999px;
   overflow: hidden;
+  flex-shrink: 0;
+  margin-bottom: 6px;
 }
 
 .ocr-progress-bar.hidden {
-  display: none;
+  display: none !important;
 }
 
 .ocr-progress-fill {

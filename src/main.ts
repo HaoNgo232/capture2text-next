@@ -19,6 +19,7 @@ const STORAGE_KEY_MODEL = "capture2text_groq_model";
 const STORAGE_KEY_PROVIDER = "capture2text_provider";
 const STORAGE_KEY_OCR_LANG = "capture2text_ocr_lang";
 const STORAGE_KEY_START_HIDDEN = "capture2text_start_hidden";
+const STORAGE_KEY_SHOW_PREVIEW = "capture2text_show_preview";
 
 const GOOGLE_ICON_SVG = `
 <svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true">
@@ -180,6 +181,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const saveSettingsBtn = document.getElementById("saveSettingsBtn") as HTMLButtonElement;
   const autoTranslateCheckbox = document.getElementById("autoTranslateCheckbox") as HTMLInputElement;
   const startHiddenCheckbox = document.getElementById("startHiddenCheckbox") as HTMLInputElement | null;
+  const showPreviewCheckbox = document.getElementById("showPreviewCheckbox") as HTMLInputElement | null;
   const shortcutPresetSelect = document.getElementById("shortcutPresetSelect") as HTMLSelectElement;
   const customShortcutInput = document.getElementById("customShortcutInput") as HTMLInputElement;
   const recordShortcutBtn = document.getElementById("recordShortcutBtn") as HTMLButtonElement;
@@ -252,6 +254,11 @@ document.addEventListener("DOMContentLoaded", () => {
   const savedStartHidden = localStorage.getItem(STORAGE_KEY_START_HIDDEN) === "true";
   if (startHiddenCheckbox) {
     startHiddenCheckbox.checked = savedStartHidden;
+  }
+
+  const savedShowPreview = localStorage.getItem(STORAGE_KEY_SHOW_PREVIEW) === "true";
+  if (showPreviewCheckbox) {
+    showPreviewCheckbox.checked = savedShowPreview;
   }
 
   // If not configured to start hidden, show and focus the main window on startup
@@ -371,6 +378,9 @@ document.addEventListener("DOMContentLoaded", () => {
       if (startHiddenCheckbox) {
         startHiddenCheckbox.checked = localStorage.getItem(STORAGE_KEY_START_HIDDEN) === "true";
       }
+      if (showPreviewCheckbox) {
+        showPreviewCheckbox.checked = localStorage.getItem(STORAGE_KEY_SHOW_PREVIEW) === "true";
+      }
       const saved = localStorage.getItem(STORAGE_KEY_SHORTCUT) || "Alt+Q";
       syncShortcutPicker(saved);
       stopRecordingShortcut();
@@ -461,6 +471,9 @@ document.addEventListener("DOMContentLoaded", () => {
     if (startHiddenCheckbox) {
       localStorage.setItem(STORAGE_KEY_START_HIDDEN, startHiddenCheckbox.checked ? "true" : "false");
     }
+    if (showPreviewCheckbox) {
+      localStorage.setItem(STORAGE_KEY_SHOW_PREVIEW, showPreviewCheckbox.checked ? "true" : "false");
+    }
 
     updateProviderUI();
     switchView("main");
@@ -535,13 +548,19 @@ document.addEventListener("DOMContentLoaded", () => {
     const lang = ocrLangSelect.value;
     const processedCanvas = preprocessImageForOcr(canvas);
 
-    previewCanvas.width = canvas.width;
-    previewCanvas.height = canvas.height;
-    const pCtx = previewCanvas.getContext("2d");
-    if (pCtx) {
-      pCtx.drawImage(canvas, 0, 0);
+    const showPreview = localStorage.getItem(STORAGE_KEY_SHOW_PREVIEW) === "true";
+    if (showPreview) {
+      previewCanvas.width = canvas.width;
+      previewCanvas.height = canvas.height;
+      const pCtx = previewCanvas.getContext("2d");
+      if (pCtx) {
+        pCtx.drawImage(canvas, 0, 0);
+      }
+      imagePreviewContainer.classList.remove("hidden");
+    } else {
+      imagePreviewContainer.classList.add("hidden");
     }
-    imagePreviewContainer.classList.remove("hidden");
+
     ocrProgressBar.classList.remove("hidden");
     ocrProgressFill.style.width = "0%";
     ocrProgressText.textContent = "Đang nạp mô hình OCR...";

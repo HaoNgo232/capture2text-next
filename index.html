@@ -132,7 +132,13 @@
             </div>
           </div>
 
-          <!-- Image Snippet Preview -->
+          <!-- OCR Progress Indicator (Slim Bar) -->
+          <div id="ocrProgressBar" class="ocr-progress-bar hidden">
+            <div id="ocrProgressFill" class="ocr-progress-fill"></div>
+            <span id="ocrProgressText" class="ocr-progress-text">Đang nhận diện chữ... 0%</span>
+          </div>
+
+          <!-- Optional Image Snippet Preview (Off by default to save UI space) -->
           <div id="imagePreviewContainer" class="image-preview-container hidden">
             <div class="preview-header">
               <span class="preview-title">Ảnh quét đã tiền xử lý</span>
@@ -145,10 +151,6 @@
             </div>
             <div class="preview-canvas-wrapper">
               <canvas id="previewCanvas" class="preview-canvas"></canvas>
-            </div>
-            <div id="ocrProgressBar" class="ocr-progress-bar hidden">
-              <div id="ocrProgressFill" class="ocr-progress-fill"></div>
-              <span id="ocrProgressText" class="ocr-progress-text">Đang nhận diện chữ... 0%</span>
             </div>
           </div>
 
@@ -282,6 +284,14 @@
               <span>Khởi động ẩn trong khay hệ thống (Silent Startup)</span>
             </label>
             <small>Không bật cửa sổ khi khởi động ứng dụng, chỉ chạy ngầm dưới khay hệ thống (System Tray). Có thể click chuột trái vào icon hoặc bấm phím tắt bất kỳ lúc nào để mở.</small>
+          </div>
+
+          <div class="setting-item">
+            <label class="checkbox-label">
+              <input type="checkbox" id="showPreviewCheckbox" />
+              <span>Hiển thị ảnh xem trước khi quét (Image Preview)</span>
+            </label>
+            <small>Mặc định tắt để giao diện luôn rộng rãi, gọn gàng và không chiếm diện tích ô văn bản.</small>
           </div>
         </div>
 
