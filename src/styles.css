@@ -54,25 +54,50 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-body {
-  background-color: var(--canvas);
-  color: var(--text-primary);
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px 16px;
-  overflow-x: hidden;
+html, body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background-color: var(--surface);
 }
 
-/* App Container - Bento Architecture */
+body {
+  color: var(--text-primary);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Minimalist Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-tertiary);
+}
+
+/* App Container - Full-window Fit */
 .card-app {
   width: 100%;
-  max-width: 580px;
+  height: 100%;
+  max-width: 100%;
+  flex: 1;
   background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-xl);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02), 0 8px 24px rgba(0, 0, 0, 0.03);
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
   display: flex;
   flex-direction: column;
   position: relative;
@@ -93,12 +118,13 @@ body {
 
 /* Header */
 .card-header {
-  padding: 12px 18px;
+  padding: 10px 18px;
   border-bottom: 1px solid var(--border);
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  flex-shrink: 0;
 }
 
 .brand {
@@ -135,10 +161,13 @@ body {
 
 /* View Section & Navigation */
 .view-section {
-  padding: 16px 18px;
+  flex: 1;
+  min-height: 0;
+  padding: 14px 18px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
+  overflow-y: auto;
   animation: appFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
@@ -150,6 +179,7 @@ body {
   display: flex;
   align-items: center;
   gap: 12px;
+  flex-shrink: 0;
 }
 
 .btn-back {
@@ -188,7 +218,8 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-top: 2px;
+  margin-top: auto;
+  flex-shrink: 0;
 }
 
 /* Control Strip - Unified Language Direction & Provider */
@@ -201,6 +232,7 @@ body {
   background: var(--surface-subtle);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
+  flex-shrink: 0;
 }
 
 .lang-direction-group {
@@ -322,11 +354,20 @@ select, option {
   border-color: var(--border-strong);
 }
 
+.source-box,
+.target-box {
+  flex: 1;
+  min-height: 110px;
+  display: flex;
+  flex-direction: column;
+}
+
 .box-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+  flex-shrink: 0;
 }
 
 .section-label {
@@ -352,6 +393,7 @@ select, option {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  flex-shrink: 0;
 }
 
 .image-preview-container.hidden {
@@ -432,14 +474,15 @@ select, option {
   font-size: 14px;
   line-height: 1.6;
   outline: none;
-  resize: vertical;
   padding: 0;
   margin: 0;
   text-indent: 0;
 }
 
 .source-area {
-  min-height: 68px;
+  flex: 1;
+  min-height: 60px;
+  resize: none;
 }
 
 .source-area::placeholder {
@@ -448,7 +491,8 @@ select, option {
 }
 
 .target-area {
-  min-height: 68px;
+  flex: 1;
+  min-height: 60px;
   white-space: pre-wrap;
   word-break: break-word;
   user-select: text;
@@ -457,6 +501,7 @@ select, option {
   text-indent: 0;
   padding: 0;
   margin: 0;
+  overflow-y: auto;
 }
 
 /* Action Divider - Primary CTA & Latency */
@@ -465,6 +510,7 @@ select, option {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  flex-shrink: 0;
 }
 
 .latency-indicator {
@@ -487,6 +533,9 @@ select, option {
 .settings-bento {
   padding: 16px;
   gap: 14px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .setting-grid {
@@ -564,7 +613,6 @@ select, option {
   }
   to {
     opacity: 1;
-    transform: scale(1.02);
   }
 }
 
@@ -576,6 +624,9 @@ select, option {
 .shortcuts-bento {
   padding: 8px 16px;
   gap: 0;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .highlight-row {
