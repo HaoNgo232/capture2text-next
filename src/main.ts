@@ -249,14 +249,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const savedShortcut = localStorage.getItem(STORAGE_KEY_SHORTCUT) || "Alt+Q";
   const knownPresets = ["Alt+Q", "Ctrl+Shift+S", "Ctrl+Shift+Q", "Alt+D", "F4"];
-  if (knownPresets.includes(savedShortcut)) {
-    shortcutPresetSelect.value = savedShortcut;
-    customShortcutInput.classList.add("hidden");
-  } else {
-    shortcutPresetSelect.value = "custom";
-    customShortcutInput.value = savedShortcut;
-    customShortcutInput.classList.remove("hidden");
+
+  function syncShortcutPicker(saved: string) {
+    if (knownPresets.includes(saved)) {
+      shortcutPresetSelect.value = saved;
+      customShortcutInput.classList.add("hidden");
+    } else {
+      shortcutPresetSelect.value = "custom";
+      customShortcutInput.value = saved;
+      customShortcutInput.classList.remove("hidden");
+    }
   }
+
+  syncShortcutPicker(savedShortcut);
 
   if (currentGlobalShortcutDisplay) {
     currentGlobalShortcutDisplay.innerHTML = renderKbdShortcut(savedShortcut);
@@ -352,14 +357,7 @@ document.addEventListener("DOMContentLoaded", () => {
       apiKeyInput.value = localStorage.getItem(STORAGE_KEY_API_KEY) || "";
       modelSelect.value = localStorage.getItem(STORAGE_KEY_MODEL) || "llama-3.3-70b-versatile";
       const saved = localStorage.getItem(STORAGE_KEY_SHORTCUT) || "Alt+Q";
-      if (knownPresets.includes(saved)) {
-        shortcutPresetSelect.value = saved;
-        customShortcutInput.classList.add("hidden");
-      } else {
-        shortcutPresetSelect.value = "custom";
-        customShortcutInput.value = saved;
-        customShortcutInput.classList.remove("hidden");
-      }
+      syncShortcutPicker(saved);
       stopRecordingShortcut();
       switchView("main");
     });
@@ -431,16 +429,20 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   saveSettingsBtn.addEventListener("click", async () => {
-    localStorage.setItem(STORAGE_KEY_API_KEY, apiKeyInput.value.trim());
-    localStorage.setItem(STORAGE_KEY_MODEL, modelSelect.value);
-
     const desiredShortcut = shortcutPresetSelect.value === "custom"
       ? customShortcutInput.value.trim()
       : shortcutPresetSelect.value;
 
     if (desiredShortcut) {
-      await applyShortcut(desiredShortcut);
+      const ok = await applyShortcut(desiredShortcut);
+      if (!ok) {
+        // Do not switch view if shortcut failed to register
+        return;
+      }
     }
+
+    localStorage.setItem(STORAGE_KEY_API_KEY, apiKeyInput.value.trim());
+    localStorage.setItem(STORAGE_KEY_MODEL, modelSelect.value);
 
     updateProviderUI();
     switchView("main");
@@ -607,11 +609,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const img = new Image();
       img.onload = async () => {
-        // 2. Maximize window to fullscreen overlay on top of all windows
+        // 2. Put window into full screen snipping overlay
         try {
-          await invoke("set_window_fullscreen", { fullscreen: true });
+          await invoke("enter_snipping");
         } catch (err) {
-          console.warn("Fullscreen toggle:", err);
+          console.warn("Enter snipping error:", err);
         }
 
         startSnippingSelection(img);
@@ -704,7 +706,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const onMouseUp = async () => {
       if (!isDrawing) return;
       isDrawing = false;
-      await cleanup();
+      await cleanup(true);
 
       const x = Math.min(startX, currentX);
       const y = Math.min(startY, currentY);
@@ -738,22 +740,21 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const onKeyDown = async (e: KeyboardEvent) => {
       if (e.key === "Escape") {
-        await cleanup();
+        await cleanup(false);
       }
     };
 
-    async function cleanup() {
+    async function cleanup(showWindow: boolean) {
       snippingOverlay.classList.add("hidden");
       window.removeEventListener("mousedown", onMouseDown);
       window.removeEventListener("mousemove", onMouseMove);
       window.removeEventListener("mouseup", onMouseUp);
       window.removeEventListener("keydown", onKeyDown);
 
-      // Restore window from fullscreen back to normal UI
       try {
-        await invoke("set_window_fullscreen", { fullscreen: false });
+        await invoke("exit_snipping", { showWindow });
       } catch (err) {
-        console.warn("Fullscreen exit:", err);
+        console.warn("Exit snipping error:", err);
       }
     }
 
@@ -893,16 +894,18 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // Source Speech (TTS for original text)
+  const OCR_TO_TTS_LANG: Record<string, string> = {
+    vie: "vi",
+    eng: "en",
+    chi_sim: "zh-CN",
+    jpn: "ja"
+  };
+
   if (sourceSpeechBtn) {
     sourceSpeechBtn.addEventListener("click", () => {
       const text = sourceInput.value.trim();
       const ocrLang = ocrLangSelect.value;
-      // Map OCR lang to TTS code
-      let langCode = "ja";
-      if (ocrLang === "vie") langCode = "vi";
-      else if (ocrLang === "eng") langCode = "en";
-      else if (ocrLang === "chi_sim") langCode = "zh-CN";
-
+      const langCode = OCR_TO_TTS_LANG[ocrLang] || "ja";
       playNaturalSpeech(text, langCode, sourceSpeechBtn);
     });
   }

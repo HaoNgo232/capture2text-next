@@ -9,6 +9,14 @@ use tauri::{
 };
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut, ShortcutState};
 
+fn focus_main_window(app: &tauri::AppHandle) {
+    if let Some(window) = app.get_webview_window("main") {
+        let _ = window.show();
+        let _ = window.unminimize();
+        let _ = window.set_focus();
+    }
+}
+
 #[tauri::command]
 fn capture_screen(app: tauri::AppHandle) -> Result<String, String> {
     // If main window is visible, hide it briefly so it is not captured in the screenshot
@@ -53,30 +61,29 @@ fn register_trigger_shortcut(app: tauri::AppHandle, shortcut: String) -> Result<
 }
 
 #[tauri::command]
-fn set_window_fullscreen(app: tauri::AppHandle, fullscreen: bool) -> Result<(), String> {
+fn enter_snipping(app: tauri::AppHandle) -> Result<(), String> {
     if let Some(window) = app.get_webview_window("main") {
-        let _ = window.set_fullscreen(fullscreen);
-        if fullscreen {
-            let _ = window.show();
-            let _ = window.unminimize();
-            let _ = window.set_always_on_top(true);
-            let _ = window.set_focus();
-        } else {
-            let _ = window.set_always_on_top(false);
-            let _ = window.show();
-            let _ = window.unminimize();
-            let _ = window.set_focus();
-        }
+        let _ = window.set_fullscreen(true);
+        let _ = window.set_always_on_top(true);
+        let _ = window.show();
+        let _ = window.unminimize();
+        let _ = window.set_focus();
     }
     Ok(())
 }
 
 #[tauri::command]
-fn show_main_window(app: tauri::AppHandle) -> Result<(), String> {
+fn exit_snipping(app: tauri::AppHandle, show_window: bool) -> Result<(), String> {
     if let Some(window) = app.get_webview_window("main") {
-        let _ = window.show();
-        let _ = window.unminimize();
-        let _ = window.set_focus();
+        let _ = window.set_always_on_top(false);
+        let _ = window.set_fullscreen(false);
+        if show_window {
+            let _ = window.show();
+            let _ = window.unminimize();
+            let _ = window.set_focus();
+        } else {
+            let _ = window.hide();
+        }
     }
     Ok(())
 }
@@ -98,9 +105,7 @@ pub fn run() {
                 .with_handler(|app, _shortcut, event| {
                     if event.state() == ShortcutState::Pressed {
                         if let Some(window) = app.get_webview_window("main") {
-                            let _ = window.show();
-                            let _ = window.unminimize();
-                            let _ = window.set_focus();
+                            // Emit trigger-capture directly without popping window first
                             let _ = window.emit("trigger-capture", ());
                         }
                     }
@@ -123,17 +128,10 @@ pub fn run() {
                         app.exit(0);
                     }
                     "show" => {
-                        if let Some(window) = app.get_webview_window("main") {
-                            let _ = window.show();
-                            let _ = window.unminimize();
-                            let _ = window.set_focus();
-                        }
+                        focus_main_window(app);
                     }
                     "capture" => {
                         if let Some(window) = app.get_webview_window("main") {
-                            let _ = window.show();
-                            let _ = window.unminimize();
-                            let _ = window.set_focus();
                             let _ = window.emit("trigger-capture", ());
                         }
                     }
@@ -146,12 +144,7 @@ pub fn run() {
                         ..
                     } = event
                     {
-                        let app = tray.app_handle();
-                        if let Some(window) = app.get_webview_window("main") {
-                            let _ = window.show();
-                            let _ = window.unminimize();
-                            let _ = window.set_focus();
-                        }
+                        focus_main_window(tray.app_handle());
                     }
                 })
                 .build(app)?;
@@ -172,8 +165,8 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             capture_screen,
             register_trigger_shortcut,
-            set_window_fullscreen,
-            show_main_window,
+            enter_snipping,
+            exit_snipping,
             hide_main_window
         ])
         .run(tauri::generate_context!())
