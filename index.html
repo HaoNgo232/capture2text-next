@@ -210,7 +210,6 @@
           </button>
           <div class="view-title-group">
             <h2 class="view-heading">Cấu hình hệ thống & API</h2>
-            <span class="view-subheading">Lưu trữ cục bộ an toàn trên máy</span>
           </div>
         </div>
 
@@ -225,7 +224,6 @@
               spellcheck="false"
               autocomplete="off"
             />
-            <small>Khóa API miễn phí từ console.groq.com để dùng mô hình Llama 3.3 siêu tốc.</small>
           </div>
 
           <div class="setting-item">
@@ -255,41 +253,32 @@
                 <span>Ghi phím</span>
               </button>
             </div>
-            <small id="shortcutHint">Kích hoạt nhanh nhận diện OCR và dịch từ bất kỳ đâu, ngay cả khi ứng dụng đang chạy ngầm.</small>
-          </div>
-
-          <div class="setting-grid">
-            <div class="setting-item">
-              <label for="modelSelect">Mô hình AI</label>
-              <select id="modelSelect" class="select-box">
-                <option value="llama-3.3-70b-versatile" selected>Llama 3.3 70B Versatile</option>
-                <option value="llama-3.1-8b-instant">Llama 3.1 8B Instant</option>
-              </select>
-            </div>
-
-            <div class="setting-item">
-              <label class="checkbox-label">
-                <input type="checkbox" id="autoTranslateCheckbox" checked />
-                <span>Tự động dịch sau khi quét OCR</span>
-              </label>
-              <small>Tự động gọi API dịch ngay sau khi nhận diện văn bản.</small>
-            </div>
+            <small id="shortcutHint" class="hidden"></small>
           </div>
 
           <div class="setting-item">
+            <label for="modelSelect">Mô hình AI</label>
+            <select id="modelSelect" class="select-box">
+              <option value="llama-3.3-70b-versatile" selected>Llama 3.3 70B Versatile</option>
+              <option value="llama-3.1-8b-instant">Llama 3.1 8B Instant</option>
+            </select>
+          </div>
+
+          <div class="settings-checkbox-group">
+            <label class="checkbox-label">
+              <input type="checkbox" id="autoTranslateCheckbox" checked />
+              <span>Tự động dịch sau khi quét OCR</span>
+            </label>
+
             <label class="checkbox-label">
               <input type="checkbox" id="startHiddenCheckbox" />
               <span>Khởi động ẩn trong khay hệ thống (Silent Startup)</span>
             </label>
-            <small>Không bật cửa sổ khi khởi động ứng dụng, chỉ chạy ngầm dưới khay hệ thống (System Tray). Có thể click chuột trái vào icon hoặc bấm phím tắt bất kỳ lúc nào để mở.</small>
-          </div>
 
-          <div class="setting-item">
             <label class="checkbox-label">
               <input type="checkbox" id="showPreviewCheckbox" />
               <span>Hiển thị ảnh xem trước khi quét (Image Preview)</span>
             </label>
-            <small>Mặc định tắt để giao diện luôn rộng rãi, gọn gàng và không chiếm diện tích ô văn bản.</small>
           </div>
         </div>
 

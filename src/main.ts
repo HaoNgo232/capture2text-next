@@ -187,8 +187,8 @@ document.addEventListener("DOMContentLoaded", () => {
         currentGlobalShortcutDisplay.innerHTML = ShortcutManager.renderHtml(res);
       }
       if (shortcutHint) {
-        shortcutHint.textContent = `Phím tắt hiện tại: ${res}. Nhấn tổ hợp phím này từ bất kỳ đâu để chụp màn hình và dịch.`;
-        shortcutHint.style.color = "var(--text-secondary)";
+        shortcutHint.textContent = "";
+        shortcutHint.classList.add("hidden");
       }
       return true;
     } catch (err: unknown) {
@@ -196,6 +196,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (shortcutHint) {
         shortcutHint.textContent = `Lỗi phím tắt: ${msg}`;
         shortcutHint.style.color = "#E53E3E";
+        shortcutHint.classList.remove("hidden");
       }
       return false;
     }
