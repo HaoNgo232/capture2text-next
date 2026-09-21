@@ -441,12 +441,63 @@ pub fn run() {
                             .and_then(|g| g.as_ref().map(|s| s == shortcut))
                             .unwrap_or(false);
 
-                        if let Some(window) = app.get_webview_window("main") {
-                            if is_quick_translate {
-                                let _ = window.emit("trigger-quick-translate", ());
-                            } else {
-                                let _ = window.emit("trigger-capture", ());
-                            }
+                        if is_quick_translate {
+                            // Grab selected text NOW — before focus shifts to our window.
+                            // We do this on a spawned thread so the shortcut handler is not blocked.
+                            let app_handle = app.clone();
+                            std::thread::spawn(move || {
+                                // Small delay so the OS finishes registering the key-up for Alt.
+                                std::thread::sleep(std::time::Duration::from_millis(60));
+
+                                // Simulate Ctrl+C to copy selected text
+                                #[cfg(target_os = "windows")]
+                                {
+                                    unsafe {
+                                        extern "system" {
+                                            fn keybd_event(bVk: u8, bScan: u8, dwFlags: u32, dwExtraInfo: usize);
+                                        }
+                                        const VK_MENU: u8 = 0x12;
+                                        const VK_SHIFT: u8 = 0x10;
+                                        const VK_CONTROL: u8 = 0x11;
+                                        const VK_C: u8 = 0x43;
+                                        const KEYEVENTF_KEYUP: u32 = 0x0002;
+
+                                        // Release any lingering modifier keys
+                                        keybd_event(VK_MENU, 0, KEYEVENTF_KEYUP, 0);
+                                        keybd_event(VK_SHIFT, 0, KEYEVENTF_KEYUP, 0);
+                                        std::thread::sleep(std::time::Duration::from_millis(20));
+
+                                        // Send Ctrl+C to the foreground app
+                                        keybd_event(VK_CONTROL, 0, 0, 0);
+                                        keybd_event(VK_C, 0, 0, 0);
+                                        keybd_event(VK_C, 0, KEYEVENTF_KEYUP, 0);
+                                        keybd_event(VK_CONTROL, 0, KEYEVENTF_KEYUP, 0);
+                                    }
+                                    // Wait for clipboard to be populated
+                                    std::thread::sleep(std::time::Duration::from_millis(120));
+
+                                    let text = get_clipboard_text_win32()
+                                        .map(|t| t.trim().to_string())
+                                        .filter(|t| !t.is_empty())
+                                        .unwrap_or_default();
+
+                                    // Now show our window and send the text
+                                    if let Some(window) = app_handle.get_webview_window("main") {
+                                        let _ = window.show();
+                                        let _ = window.unminimize();
+                                        let _ = window.set_focus();
+                                        let _ = window.emit("trigger-quick-translate", text);
+                                    }
+                                }
+                                #[cfg(not(target_os = "windows"))]
+                                {
+                                    if let Some(window) = app_handle.get_webview_window("main") {
+                                        let _ = window.emit("trigger-quick-translate", String::new());
+                                    }
+                                }
+                            });
+                        } else if let Some(window) = app.get_webview_window("main") {
+                            let _ = window.emit("trigger-capture", ());
                         }
                     }
                 })
@@ -477,9 +528,36 @@ pub fn run() {
                         }
                     }
                     "quick_translate" => {
-                        if let Some(window) = app.get_webview_window("main") {
-                            let _ = window.emit("trigger-quick-translate", ());
-                        }
+                        let app_handle = app.clone();
+                        std::thread::spawn(move || {
+                            std::thread::sleep(std::time::Duration::from_millis(60));
+                            #[cfg(target_os = "windows")]
+                            {
+                                unsafe {
+                                    extern "system" {
+                                        fn keybd_event(bVk: u8, bScan: u8, dwFlags: u32, dwExtraInfo: usize);
+                                    }
+                                    const VK_CONTROL: u8 = 0x11;
+                                    const VK_C: u8 = 0x43;
+                                    const KEYEVENTF_KEYUP: u32 = 0x0002;
+                                    keybd_event(VK_CONTROL, 0, 0, 0);
+                                    keybd_event(VK_C, 0, 0, 0);
+                                    keybd_event(VK_C, 0, KEYEVENTF_KEYUP, 0);
+                                    keybd_event(VK_CONTROL, 0, KEYEVENTF_KEYUP, 0);
+                                }
+                                std::thread::sleep(std::time::Duration::from_millis(120));
+                                let text = get_clipboard_text_win32()
+                                    .map(|t| t.trim().to_string())
+                                    .filter(|t| !t.is_empty())
+                                    .unwrap_or_default();
+                                if let Some(window) = app_handle.get_webview_window("main") {
+                                    let _ = window.show();
+                                    let _ = window.unminimize();
+                                    let _ = window.set_focus();
+                                    let _ = window.emit("trigger-quick-translate", text);
+                                }
+                            }
+                        });
                     }
                     _ => {}
                 })

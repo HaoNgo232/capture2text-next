@@ -999,18 +999,11 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   try {
-    listen("trigger-quick-translate", async () => {
-      try {
-        await invoke("show_main_window");
-      } catch { /* ignore */ }
-      try {
-        const text = await invoke<string>("get_selected_text");
-        if (text && text.trim()) {
-          sourceInput.value = text.trim();
-          await performTranslation();
-        }
-      } catch (err) {
-        console.warn("Quick translate: could not get selected text:", err);
+    listen<string>("trigger-quick-translate", async (event) => {
+      const text = event.payload?.trim() ?? "";
+      if (text) {
+        sourceInput.value = text;
+        await performTranslation();
       }
     });
   } catch (err) {
