@@ -1,8 +1,8 @@
 [package]
 name = "capture2text-next"
 version = "0.1.0"
-description = "A Tauri App"
-authors = ["you"]
+description = "Screen-snipping OCR translator for Windows: capture any text on screen, translate it and read it aloud."
+authors = ["HaoNgo232"]
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
