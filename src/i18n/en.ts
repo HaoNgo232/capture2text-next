@@ -104,6 +104,21 @@ const en = {
   confirm: {
     fallbackToGoogle: "No Groq API Key in Settings. Would you like to switch to free Google Translate?",
   },
+  tooltip: {
+    minimize: "Minimize to system tray (run in background)",
+    shortcuts: "Keyboard shortcuts",
+    settings: "System settings",
+    capture: "Capture screen region",
+    sourceSpeech: "Speak original text",
+    clearSource: "Clear content",
+    copyResult: "Copy result",
+    targetSpeech: "Speak text",
+    recordShortcut: "Record shortcut by pressing key combination",
+    recordQtShortcut: "Record quick translate shortcut",
+    fetchModels: "Fetch available models from your Groq account",
+    backToMain: "Back to translation view",
+    closePreview: "Close image",
+  },
 } as const;
 
 export default en;

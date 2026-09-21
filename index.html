@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="vi">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/icon.png" />
@@ -21,7 +21,7 @@
         </div>
 
         <div class="header-actions">
-          <button id="minimizeToTrayBtn" class="btn btn-ghost btn-sm" title="Thu nhỏ vào khay hệ thống (chạy ngầm)" aria-label="Chạy ngầm">
+          <button id="minimizeToTrayBtn" class="btn btn-ghost btn-sm" data-i18n-title="tooltip.minimize" title="Thu nhỏ vào khay hệ thống (chạy ngầm)" data-i18n-aria="header.minimize" aria-label="Chạy ngầm">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <polyline points="4 14 10 14 10 20"></polyline>
               <polyline points="20 10 14 10 14 4"></polyline>
@@ -31,7 +31,7 @@
             <span data-i18n="header.minimize">Chạy ngầm</span>
           </button>
 
-          <button id="shortcutsBtn" class="btn btn-ghost btn-sm" title="Danh sách phím tắt" aria-label="Phím tắt">
+          <button id="shortcutsBtn" class="btn btn-ghost btn-sm" data-i18n-title="tooltip.shortcuts" title="Danh sách phím tắt" data-i18n-aria="header.shortcuts" aria-label="Phím tắt">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <rect x="2" y="4" width="20" height="16" rx="2" ry="2"></rect>
               <line x1="6" y1="8" x2="6.01" y2="8"></line>
@@ -47,7 +47,7 @@
             <span data-i18n="header.shortcuts">Phím tắt</span>
           </button>
 
-          <button id="toggleSettingsBtn" class="btn btn-ghost btn-sm" title="Cấu hình hệ thống" aria-label="Cấu hình">
+          <button id="toggleSettingsBtn" class="btn btn-ghost btn-sm" data-i18n-title="tooltip.settings" title="Cấu hình hệ thống" data-i18n-aria="header.settings" aria-label="Cấu hình">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="12" cy="12" r="3"></circle>
               <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
@@ -102,14 +102,14 @@
           <div class="box-header">
             <span class="section-label" data-i18n="main.sourceLabel">Văn bản gốc</span>
             <div class="box-actions">
-              <button id="captureBtn" class="btn btn-secondary btn-sm" title="Chụp vùng màn hình">
+              <button id="captureBtn" class="btn btn-secondary btn-sm" data-i18n-title="tooltip.capture" title="Chụp vùng màn hình">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
                   <circle cx="12" cy="13" r="4"></circle>
                 </svg>
                 <span data-i18n="main.captureBtn">Chụp màn hình</span>
               </button>
-              <button id="sourceSpeechBtn" class="btn btn-secondary btn-sm" title="Phát âm văn bản gốc">
+              <button id="sourceSpeechBtn" class="btn btn-secondary btn-sm" data-i18n-title="tooltip.sourceSpeech" title="Phát âm văn bản gốc">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
                   <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
@@ -117,7 +117,7 @@
                 </svg>
                 <span data-i18n="main.speechBtn">Phát âm</span>
               </button>
-              <button id="clearSourceBtn" class="btn btn-icon-only" title="Xóa nội dung" aria-label="Xóa">
+              <button id="clearSourceBtn" class="btn btn-icon-only" data-i18n-title="tooltip.clearSource" title="Xóa nội dung" data-i18n-aria="main.clearBtn" aria-label="Xóa">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <line x1="18" y1="6" x2="6" y2="18"></line>
                   <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -136,7 +136,7 @@
           <div id="imagePreviewContainer" class="image-preview-container hidden">
             <div class="preview-header">
               <span class="preview-title" data-i18n="status.previewTitle">Ảnh quét đã tiền xử lý</span>
-              <button id="clearImageBtn" class="btn-icon-only btn-preview-close" title="Đóng ảnh" aria-label="Đóng ảnh">
+              <button id="clearImageBtn" class="btn-icon-only btn-preview-close" data-i18n-title="tooltip.closePreview" title="Đóng ảnh" data-i18n-aria="tooltip.closePreview" aria-label="Đóng ảnh">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <line x1="18" y1="6" x2="6" y2="18"></line>
                   <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -172,14 +172,14 @@
           <div class="box-header">
             <span class="section-label" data-i18n="main.targetLabel">Bản dịch</span>
             <div class="box-actions">
-              <button id="copyBtn" class="btn btn-secondary btn-sm" title="Sao chép kết quả">
+              <button id="copyBtn" class="btn btn-secondary btn-sm" data-i18n-title="tooltip.copyResult" title="Sao chép kết quả">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
                   <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
                 </svg>
                 <span data-i18n="main.copyBtn">Sao chép</span>
               </button>
-              <button id="speechBtn" class="btn btn-secondary btn-sm" title="Phát âm văn bản">
+              <button id="speechBtn" class="btn btn-secondary btn-sm" data-i18n-title="tooltip.targetSpeech" title="Phát âm văn bản">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
                   <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
@@ -197,7 +197,7 @@
       <!-- Dedicated Settings View (Hides Main View when opened) -->
       <section id="settingsView" class="card-body view-section hidden" aria-label="Cài đặt">
         <div class="view-header">
-          <button id="backFromSettingsBtn" class="btn btn-ghost btn-sm btn-back" title="Quay lại giao diện dịch">
+          <button id="backFromSettingsBtn" class="btn btn-ghost btn-sm btn-back" data-i18n-title="tooltip.backToMain" title="Quay lại giao diện dịch">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <line x1="19" y1="12" x2="5" y2="12"></line>
               <polyline points="12 19 5 12 12 5"></polyline>
@@ -250,7 +250,7 @@
                 readonly
                 spellcheck="false"
               />
-              <button id="recordShortcutBtn" type="button" class="btn btn-secondary btn-sm" title="Ghi phím bằng cách nhấn tổ hợp phím trên bàn phím">
+              <button id="recordShortcutBtn" type="button" class="btn btn-secondary btn-sm" data-i18n-title="tooltip.recordShortcut" title="Ghi phím bằng cách nhấn tổ hợp phím trên bàn phím">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <circle cx="12" cy="12" r="10"></circle>
                   <circle cx="12" cy="12" r="3"></circle>
@@ -264,7 +264,7 @@
           <div class="setting-item">
             <div class="setting-label-row">
               <label for="modelSelect" data-i18n="settings.modelLabel">Mô hình AI</label>
-              <button id="fetchModelsBtn" type="button" class="btn btn-secondary btn-sm btn-fetch-models" title="Tải danh sách mô hình khả dụng từ tài khoản Groq của bạn">
+              <button id="fetchModelsBtn" type="button" class="btn btn-secondary btn-sm btn-fetch-models" data-i18n-title="tooltip.fetchModels" title="Tải danh sách mô hình khả dụng từ tài khoản Groq của bạn">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
                 </svg>
@@ -313,7 +313,7 @@
                 spellcheck="false"
                 value="Alt+T"
               />
-              <button id="recordQuickTranslateShortcutBtn" type="button" class="btn btn-secondary btn-sm" title="Ghi phím tắt dịch nhanh">
+              <button id="recordQuickTranslateShortcutBtn" type="button" class="btn btn-secondary btn-sm" data-i18n-title="tooltip.recordQtShortcut" title="Ghi phím tắt dịch nhanh">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <circle cx="12" cy="12" r="10"></circle>
                   <circle cx="12" cy="12" r="3"></circle>
@@ -333,7 +333,7 @@
       <!-- Dedicated Shortcuts View (Hides Main View when opened) -->
       <section id="shortcutsView" class="card-body view-section hidden" aria-label="Phím tắt">
         <div class="view-header">
-          <button id="backFromShortcutsBtn" class="btn btn-ghost btn-sm btn-back" title="Quay lại giao diện dịch">
+          <button id="backFromShortcutsBtn" class="btn btn-ghost btn-sm btn-back" data-i18n-title="tooltip.backToMain" title="Quay lại giao diện dịch">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <line x1="19" y1="12" x2="5" y2="12"></line>
               <polyline points="12 19 5 12 12 5"></polyline>

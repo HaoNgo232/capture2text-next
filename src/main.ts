@@ -31,13 +31,30 @@ const OCR_TO_TTS_LANG: Record<string, string> = {
 function applyTranslations() {
   document.querySelectorAll<HTMLElement>("[data-i18n]").forEach((el) => {
     const key = el.getAttribute("data-i18n");
-    if (key) el.textContent = i18n.t(key);
+    if (!key) return;
+    el.textContent = i18n.t(key);
   });
   document.querySelectorAll<HTMLElement>("[data-i18n-placeholder]").forEach((el) => {
     const key = el.getAttribute("data-i18n-placeholder");
     if (key) (el as HTMLInputElement).placeholder = i18n.t(key);
   });
+  document.querySelectorAll<HTMLElement>("[data-i18n-title]").forEach((el) => {
+    const key = el.getAttribute("data-i18n-title");
+    if (key) el.title = i18n.t(key);
+  });
+  document.querySelectorAll<HTMLElement>("[data-i18n-aria]").forEach((el) => {
+    const key = el.getAttribute("data-i18n-aria");
+    if (key) el.setAttribute("aria-label", i18n.t(key));
+  });
   document.documentElement.lang = i18n.getLang();
+}
+
+function applyLanguage(lang: Lang, configStore: ConfigStore, languageSelect: HTMLSelectElement | null) {
+  configStore.set("language", lang);
+  i18n.setLang(lang);
+  applyTranslations();
+  invoke("set_language", { lang }).catch(() => {});
+  if (languageSelect) languageSelect.value = lang;
 }
 
 const KNOWN_PRESETS = ["Alt+Q", "Ctrl+Shift+S", "Ctrl+Shift+Q", "Alt+D", "F4"];
@@ -690,11 +707,7 @@ document.addEventListener("DOMContentLoaded", () => {
   if (languageSelect) {
     languageSelect.value = savedLang;
     languageSelect.addEventListener("change", () => {
-      const lang = languageSelect.value as Lang;
-      configStore.set("language", lang);
-      i18n.setLang(lang);
-      applyTranslations();
-      invoke("set_language", { lang }).catch(() => {});
+      applyLanguage(languageSelect.value as Lang, configStore, languageSelect);
     });
   }
 
@@ -737,8 +750,13 @@ document.addEventListener("DOMContentLoaded", () => {
   applyShortcut(savedShortcut);
   applyQuickTranslateShortcut(savedQtShortcut);
 
+  let langBeforeSettings = configStore.get("language");
+
   // Event Listeners: Navigation
   toggleSettingsBtn.addEventListener("click", () => {
+    if (currentView !== "settings") {
+      langBeforeSettings = configStore.get("language");
+    }
     switchView(currentView === "settings" ? "main" : "settings");
   });
 
@@ -772,11 +790,11 @@ document.addEventListener("DOMContentLoaded", () => {
       if (showPreviewCheckbox) showPreviewCheckbox.checked = configStore.get("showPreview");
       autoTranslateCheckbox.checked = configStore.get("autoTranslate");
       if (quickTranslateShortcutInput) quickTranslateShortcutInput.value = configStore.get("quickTranslateShortcut");
-      const savedLang = configStore.get("language");
-      if (languageSelect) languageSelect.value = savedLang;
-      i18n.setLang(savedLang);
+      i18n.setLang(langBeforeSettings);
+      configStore.set("language", langBeforeSettings);
       applyTranslations();
-      invoke("set_language", { lang: savedLang }).catch(() => {});
+      invoke("set_language", { lang: langBeforeSettings }).catch(() => {});
+      if (languageSelect) languageSelect.value = langBeforeSettings;
       invoke<boolean>("is_autostart_enabled")
         .then((enabled) => { if (autostartCheckbox) autostartCheckbox.checked = enabled; })
         .catch(() => {});
@@ -919,7 +937,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (fetchModelsHint) {
           fetchModelsHint.className = "setting-hint error";
           const msg = err instanceof Error ? err.message : String(err);
-          fetchModelsHint.textContent = `Error: ${msg}`;
+          fetchModelsHint.textContent = `${i18n.t("error.errorPrefix")}: ${msg}`;
         }
       } finally {
         fetchModelsBtn.disabled = false;

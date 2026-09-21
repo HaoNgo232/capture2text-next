@@ -311,9 +311,22 @@ fn is_silent_start() -> bool {
 }
 
 #[tauri::command]
-fn set_language(lang: String) -> Result<(), String> {
+fn set_language(app: tauri::AppHandle, lang: String) -> Result<(), String> {
+    let valid_lang = match lang.as_str() {
+        "vi" | "en" => lang,
+        _ => "en".into(),
+    };
     if let Ok(mut guard) = current_lang().lock() {
-        *guard = lang;
+        *guard = valid_lang.clone();
+    }
+    let labels = get_tray_labels(&valid_lang);
+    if let Some(tray) = app.tray_by_id("main") {
+        let quit_i = MenuItem::with_id(&app, "quit", &labels.quit, true, None::<&str>).map_err(|e| e.to_string())?;
+        let show_i = MenuItem::with_id(&app, "show", &labels.show, true, None::<&str>).map_err(|e| e.to_string())?;
+        let capture_i = MenuItem::with_id(&app, "capture", &labels.capture, true, None::<&str>).map_err(|e| e.to_string())?;
+        let quick_trans_i = MenuItem::with_id(&app, "quick_translate", &labels.quick_translate, true, None::<&str>).map_err(|e| e.to_string())?;
+        let menu = Menu::with_items(&app, &[&show_i, &capture_i, &quick_trans_i, &quit_i]).map_err(|e| e.to_string())?;
+        let _ = tray.set_menu(Some(menu));
     }
     Ok(())
 }
@@ -541,7 +554,6 @@ pub fn run() {
                 .build(),
         )
         .setup(|app| {
-            // Build Tray Menu with translated labels
             let lang = current_lang().lock().map(|g| g.clone()).unwrap_or_else(|_| "en".into());
             let labels = get_tray_labels(&lang);
             let quit_i = MenuItem::with_id(app, "quit", &labels.quit, true, None::<&str>)?;

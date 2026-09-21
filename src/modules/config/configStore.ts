@@ -1,4 +1,6 @@
-export type AppLanguage = "vi" | "en";
+import type { Lang } from "../../i18n";
+
+export type AppLanguage = Lang;
 
 export interface AppConfig {
   apiKey: string;
@@ -135,7 +137,7 @@ const CONFIG_SCHEMA: { [K in keyof AppConfig]: ConfigFieldDef<AppConfig[K]> } = 
   language: {
     storageKey: STORAGE_KEYS.LANGUAGE,
     defaultVal: DEFAULT_CONFIG.language,
-    deserialize: (raw) => (raw === "en" ? "en" : DEFAULT_CONFIG.language),
+    deserialize: (raw) => (raw === "vi" ? "vi" : raw === "en" ? "en" : DEFAULT_CONFIG.language),
     serialize: String,
   },
 };

@@ -104,6 +104,21 @@ const vi = {
   confirm: {
     fallbackToGoogle: "Chưa có Groq API Key trong Cấu hình. Bạn có muốn chuyển sang Google Translate miễn phí không?",
   },
+  tooltip: {
+    minimize: "Thu nhỏ vào khay hệ thống (chạy ngầm)",
+    shortcuts: "Danh sách phím tắt",
+    settings: "Cấu hình hệ thống",
+    capture: "Chụp vùng màn hình",
+    sourceSpeech: "Phát âm văn bản gốc",
+    clearSource: "Xóa nội dung",
+    copyResult: "Sao chép kết quả",
+    targetSpeech: "Phát âm văn bản",
+    recordShortcut: "Ghi phím bằng cách nhấn tổ hợp phím trên bàn phím",
+    recordQtShortcut: "Ghi phím tắt dịch nhanh",
+    fetchModels: "Tải danh sách mô hình khả dụng từ tài khoản Groq của bạn",
+    backToMain: "Quay lại giao diện dịch",
+    closePreview: "Đóng ảnh",
+  },
 } as const;
 
 export default vi;
