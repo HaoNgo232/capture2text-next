@@ -32,7 +32,7 @@ The app lives in the system tray and keeps working while hidden, so capture-and-
 > The current build targets **Windows 10/11**. Screen capture, clipboard access, synthetic `Ctrl+C` for quick translate and auto-start are implemented with Win32 APIs and the `HKCU\...\Run` registry key.
 
 > [!NOTE]
-> The interface ships in **Vietnamese only** today. The labels quoted throughout this README — `Cấu hình` (settings), `Văn bản gốc` (source), `Bản dịch` (result), `Dịch` (translate), `Phát âm` (read aloud) — are the Vietnamese strings you will see in the app. Localization is tracked in the [roadmap](#roadmap).
+> The interface ships in **Vietnamese and English**. The labels quoted throughout this README — `Cấu hình` (settings), `Văn bản gốc` (source), `Bản dịch` (result), `Dịch` (translate), `Phát âm` (read aloud) — are the Vietnamese strings you will see in the app. Switch to English in **Settings → UI Language**.
 
 ## Download and install
 
@@ -215,6 +215,7 @@ Open **Cấu hình** from the header. Provider, OCR language and target language
 | AI model | **Tải danh sách model** calls `GET https://api.groq.com/openai/v1/models` with your key and lists active chat models (Whisper, guard and embedding models are filtered out). The result is cached in `localStorage` under `capture2text_groq_cached_models`. |
 | Quick translate shortcut | Recorded the same way; clear it to disable the feature. |
 | Auto translate after OCR | Runs the translation as soon as text is recognized. |
+| Translation-only display | Hides the source text box and shows only the translation result. |
 | Silent startup | Launches hidden in the tray without showing the window. |
 | Image preview | Shows the preprocessed snippet above the source box. |
 | Auto startup with Windows | Writes `"<path>\capture2text-next.exe" --silent` to `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` under the value name `Capture2TextNext`. |
@@ -234,6 +235,10 @@ To reset the app, clear its `capture2text_*` `localStorage` entries; to remove a
 ├── src
 │   ├── main.ts                         Wire-up: views, settings form, snipping overlay, clipboard and speech actions
 │   ├── styles.css                      Translucent card layout and overlay styling
+│   ├── i18n
+│   │   ├── index.ts                        createI18n() factory, Lang type, I18n interface
+│   │   ├── vi.ts                           Vietnamese translations
+│   │   └── en.ts                           English translations
 │   └── modules
 │       ├── config/configStore.ts           Typed settings schema over localStorage
 │       ├── ocr/ocrPipeline.ts              tesseract.js recognition with progress events
@@ -321,7 +326,7 @@ Include your Windows version, the OCR language, the translation engine in use an
 
 Direction, not commitments — no dates and nothing promised:
 
-- [ ] **Localize the interface.** The UI is Vietnamese only today; an English toggle would open the app to a much wider audience.
+- [x] **Localize the interface.** Vietnamese and English are supported; switch in Settings → UI Language.
 - [ ] **Multi-monitor snipping.** Capture currently targets the primary display only (see [Troubleshooting](#troubleshooting)).
 - [ ] **Bundle the OCR language data.** `*.traineddata` files are fetched from the jsDelivr CDN on first use, which makes the first capture of each language slow and offline-unfriendly.
 - [ ] **Cross-platform builds.** Screen capture, synthetic `Ctrl+C` and auto-start are Win32 and registry specific, so macOS and Linux would each need their own implementation.
