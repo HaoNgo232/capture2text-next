@@ -284,6 +284,33 @@
               <input type="checkbox" id="showPreviewCheckbox" />
               <span>Hiển thị ảnh xem trước khi quét (Image Preview)</span>
             </label>
+
+            <label class="checkbox-label">
+              <input type="checkbox" id="autostartCheckbox" />
+              <span>Tự khởi động cùng Windows (Auto Startup)</span>
+            </label>
+          </div>
+
+          <div class="setting-item">
+            <label>Phím tắt dịch nhanh văn bản đã chọn</label>
+            <div class="shortcut-picker-row">
+              <input
+                type="text"
+                id="quickTranslateShortcutInput"
+                class="input-box input-shortcut"
+                placeholder="Bấm Ghi phím..."
+                readonly
+                spellcheck="false"
+                value="Alt+T"
+              />
+              <button id="recordQuickTranslateShortcutBtn" type="button" class="btn btn-secondary btn-sm" title="Ghi phím tắt dịch nhanh">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+                <span>Ghi phím</span>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -312,11 +339,21 @@
         <div class="bento-box shortcuts-bento">
           <div class="shortcut-row highlight-row">
             <div class="shortcut-desc">
-              <span class="shortcut-title">Kích hoạt chụp & dịch toàn cục</span>
+              <span class="shortcut-title">Kích hoạt chụp &amp; dịch toàn cục</span>
               <span class="shortcut-detail">Chụp vùng màn hình bất kỳ đâu ngay cả khi app đang chạy ngầm</span>
             </div>
             <div class="shortcut-keys" id="currentGlobalShortcutDisplay">
               <kbd>Alt</kbd> + <kbd>Q</kbd>
+            </div>
+          </div>
+
+          <div class="shortcut-row highlight-row">
+            <div class="shortcut-desc">
+              <span class="shortcut-title">Dịch nhanh văn bản đã chọn</span>
+              <span class="shortcut-detail">Phát Ctrl+C lấy văn bản đang chọn rồi dịch ngay, không cần chụp OCR</span>
+            </div>
+            <div class="shortcut-keys" id="currentQuickTranslateShortcutDisplay">
+              <kbd>Alt</kbd> + <kbd>T</kbd>
             </div>
           </div>
 

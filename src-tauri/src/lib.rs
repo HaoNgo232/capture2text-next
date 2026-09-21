@@ -21,6 +21,8 @@ use std::sync::Mutex;
 use image::RgbaImage;
 
 static LAST_DESKTOP_IMAGE: Mutex<Option<RgbaImage>> = Mutex::new(None);
+static CAPTURE_SHORTCUT: Mutex<Option<Shortcut>> = Mutex::new(None);
+static QUICK_TRANSLATE_SHORTCUT: Mutex<Option<Shortcut>> = Mutex::new(None);
 
 #[tauri::command]
 fn capture_screen(app: tauri::AppHandle) -> Result<String, String> {
@@ -147,19 +149,199 @@ fn capture_region(
     Ok(format!("data:image/png;base64,{}", encoded))
 }
 
+fn reregister_all_shortcuts(app: &tauri::AppHandle) -> Result<(), String> {
+    let _ = app.global_shortcut().unregister_all();
+    if let Ok(guard) = CAPTURE_SHORTCUT.lock() {
+        if let Some(sc) = guard.as_ref() {
+            let _ = app.global_shortcut().register(sc.clone());
+        }
+    }
+    if let Ok(guard) = QUICK_TRANSLATE_SHORTCUT.lock() {
+        if let Some(sc) = guard.as_ref() {
+            let _ = app.global_shortcut().register(sc.clone());
+        }
+    }
+    Ok(())
+}
+
 #[tauri::command]
 fn register_trigger_shortcut(app: tauri::AppHandle, shortcut: String) -> Result<String, String> {
     let clean = shortcut.trim().to_string();
     let sc = Shortcut::from_str(&clean)
         .map_err(|e| format!("Phím tắt không hợp lệ: {e}"))?;
     
-    // Unregister existing shortcuts
-    let _ = app.global_shortcut().unregister_all();
-    app.global_shortcut()
-        .register(sc)
-        .map_err(|e| format!("Không thể đăng ký phím tắt '{clean}': {e}"))?;
-
+    if let Ok(mut guard) = CAPTURE_SHORTCUT.lock() {
+        *guard = Some(sc);
+    }
+    reregister_all_shortcuts(&app)?;
     Ok(clean)
+}
+
+#[tauri::command]
+fn register_quick_translate_shortcut(app: tauri::AppHandle, shortcut: String) -> Result<String, String> {
+    let clean = shortcut.trim().to_string();
+    if clean.is_empty() {
+        if let Ok(mut guard) = QUICK_TRANSLATE_SHORTCUT.lock() {
+            *guard = None;
+        }
+        reregister_all_shortcuts(&app)?;
+        return Ok("".to_string());
+    }
+
+    let sc = Shortcut::from_str(&clean)
+        .map_err(|e| format!("Phím tắt dịch nhanh không hợp lệ: {e}"))?;
+    
+    if let Ok(mut guard) = QUICK_TRANSLATE_SHORTCUT.lock() {
+        *guard = Some(sc);
+    }
+    reregister_all_shortcuts(&app)?;
+    Ok(clean)
+}
+
+#[cfg(target_os = "windows")]
+fn get_clipboard_text_win32() -> Option<String> {
+    use std::ffi::OsString;
+    use std::os::windows::ffi::OsStringExt;
+
+    extern "system" {
+        fn OpenClipboard(hwnd: usize) -> i32;
+        fn CloseClipboard() -> i32;
+        fn GetClipboardData(uFormat: u32) -> usize;
+        fn GlobalLock(hMem: usize) -> *const u16;
+        fn GlobalUnlock(hMem: usize) -> i32;
+    }
+    const CF_UNICODETEXT: u32 = 13;
+
+    unsafe {
+        if OpenClipboard(0) == 0 {
+            return None;
+        }
+        let handle = GetClipboardData(CF_UNICODETEXT);
+        if handle == 0 {
+            CloseClipboard();
+            return None;
+        }
+        let ptr = GlobalLock(handle);
+        if ptr.is_null() {
+            CloseClipboard();
+            return None;
+        }
+        let mut len = 0;
+        while *ptr.add(len) != 0 {
+            len += 1;
+        }
+        let slice = std::slice::from_raw_parts(ptr, len);
+        let text = OsString::from_wide(slice).to_string_lossy().to_string();
+        GlobalUnlock(handle);
+        CloseClipboard();
+        Some(text)
+    }
+}
+
+#[tauri::command]
+fn get_selected_text() -> Result<String, String> {
+    #[cfg(target_os = "windows")]
+    {
+        unsafe {
+            extern "system" {
+                fn keybd_event(bVk: u8, bScan: u8, dwFlags: u32, dwExtraInfo: usize);
+            }
+            const VK_MENU: u8 = 0x12; // Alt
+            const VK_SHIFT: u8 = 0x10; // Shift
+            const VK_CONTROL: u8 = 0x11;
+            const VK_C: u8 = 0x43;
+            const KEYEVENTF_KEYUP: u32 = 0x0002;
+
+            // Release modifiers
+            keybd_event(VK_MENU, 0, KEYEVENTF_KEYUP, 0);
+            keybd_event(VK_SHIFT, 0, KEYEVENTF_KEYUP, 0);
+            std::thread::sleep(std::time::Duration::from_millis(15));
+
+            // Send Ctrl+C
+            keybd_event(VK_CONTROL, 0, 0, 0);
+            keybd_event(VK_C, 0, 0, 0);
+            keybd_event(VK_C, 0, KEYEVENTF_KEYUP, 0);
+            keybd_event(VK_CONTROL, 0, KEYEVENTF_KEYUP, 0);
+        }
+
+        std::thread::sleep(std::time::Duration::from_millis(80));
+
+        if let Some(text) = get_clipboard_text_win32() {
+            let clean = text.trim().to_string();
+            if !clean.is_empty() {
+                return Ok(clean);
+            }
+        }
+    }
+    Err("Không tìm thấy văn bản được chọn".to_string())
+}
+
+#[tauri::command]
+fn is_silent_start() -> bool {
+    std::env::args().any(|arg| arg == "--silent")
+}
+
+#[tauri::command]
+fn is_autostart_enabled() -> bool {
+    #[cfg(target_os = "windows")]
+    {
+        let output = std::process::Command::new("reg")
+            .args(&[
+                "query",
+                "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run",
+                "/v",
+                "Capture2TextNext",
+            ])
+            .output();
+        if let Ok(out) = output {
+            return out.status.success();
+        }
+    }
+    false
+}
+
+#[tauri::command]
+fn set_autostart(enabled: bool) -> Result<bool, String> {
+    #[cfg(target_os = "windows")]
+    {
+        if enabled {
+            let exe = std::env::current_exe().map_err(|e| e.to_string())?;
+            let exe_str = exe.to_str().ok_or("Đường dẫn exe không hợp lệ")?;
+            let reg_value = format!("\"{}\" --silent", exe_str);
+
+            let output = std::process::Command::new("reg")
+                .args(&[
+                    "add",
+                    "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run",
+                    "/v",
+                    "Capture2TextNext",
+                    "/t",
+                    "REG_SZ",
+                    "/d",
+                    &reg_value,
+                    "/f",
+                ])
+                .output()
+                .map_err(|e| e.to_string())?;
+
+            if !output.status.success() {
+                return Err("Không thể ghi cấu hình vào Windows Registry".to_string());
+            }
+        } else {
+            let _ = std::process::Command::new("reg")
+                .args(&[
+                    "delete",
+                    "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run",
+                    "/v",
+                    "Capture2TextNext",
+                    "/f",
+                ])
+                .output();
+        }
+        return Ok(enabled);
+    }
+    #[cfg(not(target_os = "windows"))]
+    Ok(false)
 }
 
 #[tauri::command]
@@ -251,11 +433,20 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(
             tauri_plugin_global_shortcut::Builder::new()
-                .with_handler(|app, _shortcut, event| {
+                .with_handler(|app, shortcut, event| {
                     if event.state() == ShortcutState::Pressed {
+                        let is_quick_translate = QUICK_TRANSLATE_SHORTCUT
+                            .lock()
+                            .ok()
+                            .and_then(|g| g.as_ref().map(|s| s == shortcut))
+                            .unwrap_or(false);
+
                         if let Some(window) = app.get_webview_window("main") {
-                            // Emit trigger-capture directly without popping window first
-                            let _ = window.emit("trigger-capture", ());
+                            if is_quick_translate {
+                                let _ = window.emit("trigger-quick-translate", ());
+                            } else {
+                                let _ = window.emit("trigger-capture", ());
+                            }
                         }
                     }
                 })
@@ -266,7 +457,8 @@ pub fn run() {
             let quit_i = MenuItem::with_id(app, "quit", "Thoát Capture2Text", true, None::<&str>)?;
             let show_i = MenuItem::with_id(app, "show", "Mở giao diện", true, None::<&str>)?;
             let capture_i = MenuItem::with_id(app, "capture", "Chụp màn hình (OCR)", true, None::<&str>)?;
-            let menu = Menu::with_items(app, &[&show_i, &capture_i, &quit_i])?;
+            let quick_trans_i = MenuItem::with_id(app, "quick_translate", "Dịch nhanh văn bản chọn", true, None::<&str>)?;
+            let menu = Menu::with_items(app, &[&show_i, &capture_i, &quick_trans_i, &quit_i])?;
 
             let _tray = TrayIconBuilder::new()
                 .icon(app.default_window_icon().unwrap().clone())
@@ -284,6 +476,11 @@ pub fn run() {
                             let _ = window.emit("trigger-capture", ());
                         }
                     }
+                    "quick_translate" => {
+                        if let Some(window) = app.get_webview_window("main") {
+                            let _ = window.emit("trigger-quick-translate", ());
+                        }
+                    }
                     _ => {}
                 })
                 .on_tray_icon_event(|tray, event| {
@@ -298,9 +495,19 @@ pub fn run() {
                 })
                 .build(app)?;
 
-            // Register default trigger shortcut (e.g. Alt+Q or Ctrl+Shift+S)
-            // Can also be registered/updated from frontend on boot
-            let _ = app.global_shortcut().register(Shortcut::from_str("Alt+Q").unwrap());
+            // Register default trigger shortcuts
+            if let Ok(sc) = Shortcut::from_str("Alt+Q") {
+                if let Ok(mut g) = CAPTURE_SHORTCUT.lock() {
+                    *g = Some(sc.clone());
+                }
+                let _ = app.global_shortcut().register(sc);
+            }
+            if let Ok(sc) = Shortcut::from_str("Alt+T") {
+                if let Ok(mut g) = QUICK_TRANSLATE_SHORTCUT.lock() {
+                    *g = Some(sc.clone());
+                }
+                let _ = app.global_shortcut().register(sc);
+            }
 
             Ok(())
         })
@@ -316,6 +523,11 @@ pub fn run() {
             crop_captured_screen,
             capture_region,
             register_trigger_shortcut,
+            register_quick_translate_shortcut,
+            get_selected_text,
+            is_silent_start,
+            is_autostart_enabled,
+            set_autostart,
             enter_snipping,
             exit_snipping,
             show_main_window,

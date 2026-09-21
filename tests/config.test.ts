@@ -5,9 +5,11 @@ describe("ConfigStore", () => {
   it("returns default values when storage is empty", () => {
     const store = new ConfigStore();
     expect(store.get("shortcut")).toBe("Alt+Q");
+    expect(store.get("quickTranslateShortcut")).toBe("Alt+T");
     expect(store.get("provider")).toBe("google");
     expect(store.get("ocrLang")).toBe("jpn");
     expect(store.get("startHidden")).toBe(false);
+    expect(store.get("autostart")).toBe(false);
     expect(store.get("showPreview")).toBe(false);
     expect(store.get("autoTranslate")).toBe(true);
   });

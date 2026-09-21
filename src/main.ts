@@ -115,11 +115,15 @@ document.addEventListener("DOMContentLoaded", () => {
   const autoTranslateCheckbox = document.getElementById("autoTranslateCheckbox") as HTMLInputElement;
   const startHiddenCheckbox = document.getElementById("startHiddenCheckbox") as HTMLInputElement | null;
   const showPreviewCheckbox = document.getElementById("showPreviewCheckbox") as HTMLInputElement | null;
+  const autostartCheckbox = document.getElementById("autostartCheckbox") as HTMLInputElement | null;
   const shortcutPresetSelect = document.getElementById("shortcutPresetSelect") as HTMLSelectElement;
   const customShortcutInput = document.getElementById("customShortcutInput") as HTMLInputElement;
   const recordShortcutBtn = document.getElementById("recordShortcutBtn") as HTMLButtonElement;
   const shortcutHint = document.getElementById("shortcutHint") as HTMLElement;
   const currentGlobalShortcutDisplay = document.getElementById("currentGlobalShortcutDisplay") as HTMLElement | null;
+  const quickTranslateShortcutInput = document.getElementById("quickTranslateShortcutInput") as HTMLInputElement | null;
+  const recordQuickTranslateShortcutBtn = document.getElementById("recordQuickTranslateShortcutBtn") as HTMLButtonElement | null;
+  const currentQuickTranslateShortcutDisplay = document.getElementById("currentQuickTranslateShortcutDisplay") as HTMLElement | null;
 
   // Preview & Progress
   const imagePreviewContainer = document.getElementById("imagePreviewContainer") as HTMLDivElement;
@@ -136,6 +140,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // View state
   let currentView: ActiveView = "main";
   let isRecordingShortcut = false;
+  let isRecordingQtShortcut = false;
   let isCapturing = false;
   let activeSpeechButton: HTMLButtonElement | null = null;
   let activeSpeechButtonHTML = "";
@@ -241,6 +246,23 @@ document.addEventListener("DOMContentLoaded", () => {
         shortcutHint.style.color = "#E53E3E";
         shortcutHint.classList.remove("hidden");
       }
+      return false;
+    }
+  }
+
+  async function applyQuickTranslateShortcut(shortcutStr: string): Promise<boolean> {
+    try {
+      const res = await invoke<string>("register_quick_translate_shortcut", { shortcut: shortcutStr });
+      configStore.set("quickTranslateShortcut", res);
+      if (currentQuickTranslateShortcutDisplay) {
+        currentQuickTranslateShortcutDisplay.innerHTML = ShortcutManager.renderHtml(res);
+      }
+      if (quickTranslateShortcutInput) {
+        quickTranslateShortcutInput.value = res;
+      }
+      return true;
+    } catch (err: unknown) {
+      console.warn("Lỗi đăng ký phím tắt dịch nhanh:", err);
       return false;
     }
   }
@@ -652,13 +674,36 @@ document.addEventListener("DOMContentLoaded", () => {
     currentGlobalShortcutDisplay.innerHTML = ShortcutManager.renderHtml(savedShortcut);
   }
 
-  // Startup window display
-  if (!configStore.get("startHidden")) {
-    invoke("show_main_window").catch((err) => console.warn("Failed to show window on startup:", err));
+  // Sync quick translate shortcut display
+  const savedQtShortcut = configStore.get("quickTranslateShortcut");
+  if (quickTranslateShortcutInput) quickTranslateShortcutInput.value = savedQtShortcut;
+  if (currentQuickTranslateShortcutDisplay) {
+    currentQuickTranslateShortcutDisplay.innerHTML = ShortcutManager.renderHtml(savedQtShortcut);
   }
 
-  // Register shortcut on startup
+  // Sync autostart checkbox from registry
+  invoke<boolean>("is_autostart_enabled")
+    .then((enabled) => {
+      if (autostartCheckbox) autostartCheckbox.checked = enabled;
+    })
+    .catch(() => {/* ignore */});
+
+  // Startup window display — respect --silent flag (auto startup)
+  invoke<boolean>("is_silent_start")
+    .then((silent) => {
+      if (!silent && !configStore.get("startHidden")) {
+        invoke("show_main_window").catch((err) => console.warn("Failed to show window on startup:", err));
+      }
+    })
+    .catch(() => {
+      if (!configStore.get("startHidden")) {
+        invoke("show_main_window").catch((err) => console.warn("Failed to show window on startup:", err));
+      }
+    });
+
+  // Register shortcuts on startup
   applyShortcut(savedShortcut);
+  applyQuickTranslateShortcut(savedQtShortcut);
 
   // Event Listeners: Navigation
   toggleSettingsBtn.addEventListener("click", () => {
@@ -694,6 +739,10 @@ document.addEventListener("DOMContentLoaded", () => {
       if (startHiddenCheckbox) startHiddenCheckbox.checked = configStore.get("startHidden");
       if (showPreviewCheckbox) showPreviewCheckbox.checked = configStore.get("showPreview");
       autoTranslateCheckbox.checked = configStore.get("autoTranslate");
+      if (quickTranslateShortcutInput) quickTranslateShortcutInput.value = configStore.get("quickTranslateShortcut");
+      invoke<boolean>("is_autostart_enabled")
+        .then((enabled) => { if (autostartCheckbox) autostartCheckbox.checked = enabled; })
+        .catch(() => {});
       syncShortcutPicker(configStore.get("shortcut"));
       stopRecordingShortcut();
       switchView("main");
@@ -724,6 +773,21 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
+  if (recordQuickTranslateShortcutBtn && quickTranslateShortcutInput) {
+    recordQuickTranslateShortcutBtn.addEventListener("click", () => {
+      if (isRecordingQtShortcut) {
+        isRecordingQtShortcut = false;
+        recordQuickTranslateShortcutBtn.querySelector("span")!.textContent = "Ghi phím";
+        quickTranslateShortcutInput.value = configStore.get("quickTranslateShortcut");
+      } else {
+        isRecordingQtShortcut = true;
+        recordQuickTranslateShortcutBtn.querySelector("span")!.textContent = "Bấm phím...";
+        quickTranslateShortcutInput.value = "Đang chờ bấm tổ hợp phím...";
+        quickTranslateShortcutInput.focus();
+      }
+    });
+  }
+
   window.addEventListener("keydown", (e: KeyboardEvent) => {
     if (isRecordingShortcut) {
       e.preventDefault();
@@ -740,6 +804,26 @@ document.addEventListener("DOMContentLoaded", () => {
         customShortcutInput.value = parsed;
         shortcutPresetSelect.value = "custom";
         stopRecordingShortcut();
+      }
+      return;
+    }
+
+    if (isRecordingQtShortcut && quickTranslateShortcutInput && recordQuickTranslateShortcutBtn) {
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (e.key === "Escape") {
+        isRecordingQtShortcut = false;
+        recordQuickTranslateShortcutBtn.querySelector("span")!.textContent = "Ghi phím";
+        quickTranslateShortcutInput.value = configStore.get("quickTranslateShortcut");
+        return;
+      }
+
+      const parsed = ShortcutManager.parseFromEvent(e);
+      if (parsed) {
+        quickTranslateShortcutInput.value = parsed;
+        isRecordingQtShortcut = false;
+        recordQuickTranslateShortcutBtn.querySelector("span")!.textContent = "Ghi phím";
       }
       return;
     }
@@ -828,12 +912,25 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!ok) return;
     }
 
+    // Apply quick translate shortcut
+    if (quickTranslateShortcutInput && quickTranslateShortcutInput.value.trim()) {
+      await applyQuickTranslateShortcut(quickTranslateShortcutInput.value.trim());
+    }
+
+    // Apply autostart registry setting
+    if (autostartCheckbox) {
+      invoke("set_autostart", { enabled: autostartCheckbox.checked }).catch((err) =>
+        console.warn("Autostart set error:", err)
+      );
+    }
+
     configStore.setMany({
       apiKey: apiKeyInput.value.trim(),
       model: modelSelect.value,
       startHidden: startHiddenCheckbox ? startHiddenCheckbox.checked : false,
       showPreview: showPreviewCheckbox ? showPreviewCheckbox.checked : false,
       autoTranslate: autoTranslateCheckbox.checked,
+      quickTranslateShortcut: quickTranslateShortcutInput ? quickTranslateShortcutInput.value.trim() : configStore.get("quickTranslateShortcut"),
     });
 
     if (fetchModelsHint) fetchModelsHint.classList.add("hidden");
@@ -899,6 +996,25 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   } catch (err) {
     console.warn("Could not register trigger-capture listener:", err);
+  }
+
+  try {
+    listen("trigger-quick-translate", async () => {
+      try {
+        await invoke("show_main_window");
+      } catch { /* ignore */ }
+      try {
+        const text = await invoke<string>("get_selected_text");
+        if (text && text.trim()) {
+          sourceInput.value = text.trim();
+          await performTranslation();
+        }
+      } catch (err) {
+        console.warn("Quick translate: could not get selected text:", err);
+      }
+    });
+  } catch (err) {
+    console.warn("Could not register trigger-quick-translate listener:", err);
   }
 
   translateBtn.addEventListener("click", performTranslation);

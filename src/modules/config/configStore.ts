@@ -4,7 +4,9 @@ export interface AppConfig {
   provider: "google" | "groq";
   ocrLang: string;
   shortcut: string;
+  quickTranslateShortcut: string;
   startHidden: boolean;
+  autostart: boolean;
   showPreview: boolean;
   autoTranslate: boolean;
 }
@@ -15,7 +17,9 @@ export const STORAGE_KEYS = {
   PROVIDER: "capture2text_provider",
   OCR_LANG: "capture2text_ocr_lang",
   SHORTCUT: "capture2text_trigger_shortcut",
+  QUICK_TRANSLATE_SHORTCUT: "capture2text_quick_translate_shortcut",
   START_HIDDEN: "capture2text_start_hidden",
+  AUTOSTART: "capture2text_autostart",
   SHOW_PREVIEW: "capture2text_show_preview",
   AUTO_TRANSLATE: "capture2text_auto_translate",
 } as const;
@@ -26,7 +30,9 @@ export const DEFAULT_CONFIG: AppConfig = {
   provider: "google",
   ocrLang: "jpn",
   shortcut: "Alt+Q",
+  quickTranslateShortcut: "Alt+T",
   startHidden: false,
+  autostart: false,
   showPreview: false,
   autoTranslate: true,
 };
@@ -91,10 +97,22 @@ const CONFIG_SCHEMA: { [K in keyof AppConfig]: ConfigFieldDef<AppConfig[K]> } = 
     deserialize: (raw) => raw ?? DEFAULT_CONFIG.shortcut,
     serialize: String,
   },
+  quickTranslateShortcut: {
+    storageKey: STORAGE_KEYS.QUICK_TRANSLATE_SHORTCUT,
+    defaultVal: DEFAULT_CONFIG.quickTranslateShortcut,
+    deserialize: (raw) => raw ?? DEFAULT_CONFIG.quickTranslateShortcut,
+    serialize: String,
+  },
   startHidden: {
     storageKey: STORAGE_KEYS.START_HIDDEN,
     defaultVal: DEFAULT_CONFIG.startHidden,
     deserialize: (raw) => (raw === null ? DEFAULT_CONFIG.startHidden : raw === "true"),
+    serialize: String,
+  },
+  autostart: {
+    storageKey: STORAGE_KEYS.AUTOSTART,
+    defaultVal: DEFAULT_CONFIG.autostart,
+    deserialize: (raw) => (raw === null ? DEFAULT_CONFIG.autostart : raw === "true"),
     serialize: String,
   },
   showPreview: {
