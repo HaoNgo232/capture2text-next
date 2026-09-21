@@ -1,0 +1,74 @@
+name: Release
+
+# Builds the Windows installers and publishes them on the repository's Releases tab.
+#
+# Cutting a release:
+#   1. Bump "version" in src-tauri/tauri.conf.json (keep package.json in sync)
+#   2. git commit -am "chore(release): v0.2.0"
+#   3. git tag v0.2.0 && git push origin master v0.2.0
+#
+# The tag is derived from the app version (v__VERSION__ below), so the tag, the
+# tauri.conf.json version and the installer filenames must all agree.
+# The workflow can also be run by hand from the Actions tab.
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Build and publish installers
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.x
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust build artifacts
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: ./src-tauri -> target
+
+      - name: Install frontend dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Run unit tests
+        run: bun test
+
+      - name: Build and publish to GitHub Releases
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: v__VERSION__
+          releaseName: 'Capture2Text Next v__VERSION__'
+          releaseBody: |
+            Windows installers for **Capture2Text Next v__VERSION__**, built from commit `${{ github.sha }}`.
+
+            | Download | Notes |
+            | --- | --- |
+            | `*_x64-setup.exe` | NSIS installer — recommended |
+            | `*_x64_en-US.msi` | Windows Installer package, for scripted or managed installs |
+
+            The bundles are **not code signed**, so SmartScreen shows *"Windows protected your PC"* the first time you run the installer. Choose **More info** → **Run anyway**.
+
+            Usage, keyboard shortcuts and troubleshooting are documented in the [README](https://github.com/HaoNgo232/capture2text-next#readme).
+          releaseDraft: false
+          prerelease: false
+          includeDebug: false
+          args: --bundles nsis,msi

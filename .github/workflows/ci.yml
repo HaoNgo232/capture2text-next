@@ -1,0 +1,52 @@
+name: CI
+
+# Type checks the frontend, runs the unit tests and type checks the Rust backend.
+# The release workflow does not run these checks, so keep this green before tagging.
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Type check, tests and Rust check
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.x
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust build artifacts
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: ./src-tauri -> target
+
+      - name: Install frontend dependencies
+        run: bun install --frozen-lockfile
+
+      # tsc runs first inside this script, so it type checks the frontend too.
+      - name: Type check and build the frontend
+        run: bun run build
+
+      - name: Run unit tests
+        run: bun test
+
+      # Needs the frontend bundle produced above: tauri-build resolves the
+      # frontendDist path while the Rust crate is being compiled.
+      - name: Check the Rust backend
+        working-directory: src-tauri
+        run: cargo check --locked

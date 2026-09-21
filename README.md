@@ -14,10 +14,12 @@
 [![Bun](https://img.shields.io/badge/Bun-%3E%3D1.3-000000?style=flat-square&logo=bun&logoColor=white)](https://bun.sh)
 [![OCR](https://img.shields.io/badge/OCR-tesseract.js-4B8BBE?style=flat-square)](https://tesseract.projectnaptha.com)
 ![Platform](https://img.shields.io/badge/platform-Windows-0078D6?style=flat-square&logo=windows&logoColor=white)
+[![Release](https://img.shields.io/github/v/release/HaoNgo232/capture2text-next?style=flat-square&label=release&color=2ea44f)](https://github.com/HaoNgo232/capture2text-next/releases/latest)
+[![CI](https://github.com/HaoNgo232/capture2text-next/actions/workflows/ci.yml/badge.svg)](https://github.com/HaoNgo232/capture2text-next/actions/workflows/ci.yml)
 
 :star: If you like this project, star it on GitHub — it helps a lot!
 
-[Screenshots](#screenshots) • [Features](#features) • [How it works](#how-it-works) • [Prerequisites](#prerequisites) • [Getting started](#getting-started) • [Usage](#usage) • [Keyboard shortcuts](#keyboard-shortcuts) • [Configuration](#configuration) • [Project structure](#project-structure) • [Development notes](#development-notes) • [Troubleshooting](#troubleshooting) • [Contributing](#contributing) • [Roadmap](#roadmap) • [Acknowledgments](#acknowledgments) • [License](#license)
+[Download and install](#download-and-install) • [Screenshots](#screenshots) • [Features](#features) • [How it works](#how-it-works) • [Prerequisites](#prerequisites) • [Getting started](#getting-started) • [Usage](#usage) • [Keyboard shortcuts](#keyboard-shortcuts) • [Configuration](#configuration) • [Project structure](#project-structure) • [Development notes](#development-notes) • [Troubleshooting](#troubleshooting) • [Contributing](#contributing) • [Roadmap](#roadmap) • [Acknowledgments](#acknowledgments) • [License](#license)
 
 </div>
 
@@ -30,6 +32,20 @@ The app lives in the system tray and keeps working while hidden, so capture-and-
 
 > [!NOTE]
 > The interface ships in **Vietnamese only** today. The labels quoted throughout this README — `Cấu hình` (settings), `Văn bản gốc` (source), `Bản dịch` (result), `Dịch` (translate), `Phát âm` (read aloud) — are the Vietnamese strings you will see in the app. Localization is tracked in the [roadmap](#roadmap).
+
+## Download and install
+
+Grab the installer from the [latest release](https://github.com/HaoNgo232/capture2text-next/releases/latest) — nothing else needs to be installed first:
+
+| File | Notes |
+| --- | --- |
+| `*_x64-setup.exe` | NSIS installer. Recommended, and the quickest way in. |
+| `*_x64_en-US.msi` | Windows Installer package, for scripted or managed installs. |
+
+> [!IMPORTANT]
+> The bundles are **not code signed**, so SmartScreen shows *"Windows protected your PC"* the first time you run the installer. Choose **More info** → **Run anyway**. Code signing is on the [roadmap](#roadmap).
+
+Releases are packaged by [`.github/workflows/release.yml`](.github/workflows/release.yml) on every `v*` tag, so the newest download is always the newest build. To compile it yourself instead, jump to [Getting started](#getting-started).
 
 ## Screenshots
 
@@ -134,6 +150,8 @@ Installers are written to:
 - `src-tauri/target/release/bundle/msi/capture2text-next_0.1.0_x64_en-US.msi`
 - `src-tauri/target/release/bundle/nsis/capture2text-next_0.1.0_x64-setup.exe`
 
+CI builds both and attaches them to a GitHub Release whenever a `v*` tag is pushed — see [`.github/workflows/release.yml`](.github/workflows/release.yml).
+
 ### Run the tests
 
 ```bash
@@ -209,6 +227,7 @@ To reset the app, clear its `capture2text_*` `localStorage` entries; to remove a
 
 ```
 .
+├── .github/workflows                   CI (type check and tests) plus release packaging
 ├── index.html                          Single-window UI (source pane, result pane, settings, shortcuts, snipping overlay)
 ├── src
 │   ├── main.ts                         Wire-up: views, settings form, snipping overlay, clipboard and speech actions
@@ -290,7 +309,7 @@ A few conventions are worth knowing before you open a pull request:
 - **Rust commands live in `src-tauri/src/lib.rs`.** Register new ones in the `generate_handler!` macro and add the matching wrapper in the frontend.
 - **Match the surrounding style.** Vanilla TypeScript with no UI framework, Vietnamese UI strings, English code comments.
 
-There is no CI workflow yet, so please paste your `bun test` output into the pull request description.
+CI runs `bun run build`, `bun test` and `cargo check` on every push and pull request ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)), so a red check is the first thing to look at.
 
 ### Reporting a bug
 
@@ -304,6 +323,7 @@ Direction, not commitments — no dates and nothing promised:
 - [ ] **Multi-monitor snipping.** Capture currently targets the primary display only (see [Troubleshooting](#troubleshooting)).
 - [ ] **Bundle the OCR language data.** `*.traineddata` files are fetched from the jsDelivr CDN on first use, which makes the first capture of each language slow and offline-unfriendly.
 - [ ] **Cross-platform builds.** Screen capture, synthetic `Ctrl+C` and auto-start are Win32 and registry specific, so macOS and Linux would each need their own implementation.
+- [ ] **Code sign the installers.** Releases are unsigned, so SmartScreen warns on first launch.
 
 ## Acknowledgments
 
