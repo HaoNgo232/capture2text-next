@@ -55,3 +55,17 @@ Commands run through Windows PowerShell 5.1, one command at a time:
 Licensed **Apache-2.0** ([LICENSE](LICENSE)): keep copyright and license notices intact, state changed files, and keep new dependencies permissive (MIT / Apache-2.0 / BSD) so the Apache-2.0 grant stays valid.
 
 `skills-lock.json` in the root is untracked tooling state, not part of the build: stage explicit paths in commits.
+
+## Agent skills
+
+### Issue tracker
+
+Issues live as local markdown files under `.scratch/`. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Default five canonical triage roles, used as-is. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context layout (one `CONTEXT.md` + `docs/adr/` at repo root). See `docs/agents/domain.md`.
