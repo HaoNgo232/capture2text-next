@@ -408,12 +408,17 @@ fn enter_snipping(app: tauri::AppHandle) -> Result<(), String> {
 #[tauri::command]
 fn exit_snipping(app: tauri::AppHandle, show_window: bool) -> Result<(), String> {
     if let Some(window) = app.get_webview_window("main") {
-        let _ = window.set_always_on_top(false);
-        let _ = window.set_fullscreen(false);
-        if show_window {
-            focus_main_window(&app);
-        } else {
+        if !show_window {
+            // Hide BEFORE restoring from fullscreen: otherwise Windows composites
+            // a frame of the normal-size window over the desktop (UI flicker on
+            // mouse release during snipping).
             let _ = window.hide();
+            let _ = window.set_always_on_top(false);
+            let _ = window.set_fullscreen(false);
+        } else {
+            let _ = window.set_always_on_top(false);
+            let _ = window.set_fullscreen(false);
+            focus_main_window(&app);
         }
     }
     Ok(())
