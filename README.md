@@ -227,6 +227,7 @@ To reset the app, clear its `capture2text_*` `localStorage` entries; to remove a
 
 ```
 .
+├── AGENTS.md                           Commands and conventions for AI coding agents
 ├── .github/workflows                   CI (type check and tests) plus release packaging
 ├── index.html                          Single-window UI (source pane, result pane, settings, shortcuts, snipping overlay)
 ├── src
