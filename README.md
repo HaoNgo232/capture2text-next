@@ -20,7 +20,7 @@
 
 :star: If you like this project, star it on GitHub — it helps a lot!
 
-[Download and install](#download-and-install) • [Screenshots](#screenshots) • [Features](#features) • [How it works](#how-it-works) • [Prerequisites](#prerequisites) • [Getting started](#getting-started) • [Usage](#usage) • [Keyboard shortcuts](#keyboard-shortcuts) • [Configuration](#configuration) • [Project structure](#project-structure) • [Development notes](#development-notes) • [Troubleshooting](#troubleshooting) • [Contributing](#contributing) • [Roadmap](#roadmap) • [Acknowledgments](#acknowledgments) • [License](#license)
+[Download and install](#download-and-install) • [Screenshots](#screenshots) • [Features](#features) • [How it works](#how-it-works) • [Prerequisites](#prerequisites) • [Getting started](#getting-started) • [Usage](#usage) • [Keyboard shortcuts](#keyboard-shortcuts) • [Configuration](#configuration) • [Project structure](#project-structure) • [Development notes](#development-notes) • [Troubleshooting](TROUBLESHOOTING.md) • [Contributing](#contributing) • [Roadmap](#roadmap) • [Acknowledgments](#acknowledgments) • [License](#license)
 
 </div>
 
@@ -266,37 +266,7 @@ To reset the app, clear its `capture2text_*` `localStorage` entries; to remove a
 
 ## Troubleshooting
 
-**OCR is slow, or reports the OCR library is not ready on the first capture**
-
-tesseract.js downloads the `*.traineddata` file for the selected language from the jsDelivr CDN the first time that language is used, then caches it. The first run therefore needs network access and takes noticeably longer; later runs are fast.
-
-**OCR returns little or no text**
-
-Select a tighter region around the text, prefer high-contrast content, and pick the correct source language in the control strip. Snippets smaller than 35 px are upscaled 2x automatically, but heavily compressed or rotated text will still fail.
-
-**A global shortcut does nothing**
-
-Another application is probably holding `Alt+Q` or `Alt+T`. Record a different combination in **Cấu hình**. A failed registration keeps the previous shortcut, so the app never becomes unreachable.
-
-**Quick translate (`Alt+T`) picks up nothing**
-
-The feature simulates `Ctrl+C` with Win32 `keybd_event`, which cannot reach an elevated (run-as-administrator) app from a non-elevated process, and some terminals or games ignore synthetic input. Copy the text manually and paste it into the source box instead.
-
-**The captured region is black or blank**
-
-Protected/DRM video surfaces and some GPU-accelerated layers cannot be captured. The overlay also freezes the desktop, so content that changes after the overlay appears is not in the crop — press the shortcut again to re-capture.
-
-**No window appears after launching**
-
-The app is tray-first. Check the tray icon, and note that *Silent startup* and auto-start with `--silent` intentionally launch without showing the window.
-
-**Only the primary monitor is captured**
-
-Screen capture targets the primary display, so on multi-monitor setups the snipping overlay covers the primary monitor only.
-
-**The app window is missing from my screenshot**
-
-That is intentional: the window is hidden just before capturing so it never appears in the crop.
+See [TROUBLESHOOTING.md](TROUBLESHOOTING.md) for known failure modes and their causes.
 
 ## Contributing
 
@@ -327,7 +297,7 @@ Include your Windows version, the OCR language, the translation engine in use an
 Direction, not commitments — no dates and nothing promised:
 
 - [x] **Localize the interface.** Vietnamese and English are supported; switch in Settings → UI Language.
-- [ ] **Multi-monitor snipping.** Capture currently targets the primary display only (see [Troubleshooting](#troubleshooting)).
+- [ ] **Multi-monitor snipping.** Capture currently targets the primary display only (see [Troubleshooting](TROUBLESHOOTING.md)).
 - [ ] **Bundle the OCR language data.** `*.traineddata` files are fetched from the jsDelivr CDN on first use, which makes the first capture of each language slow and offline-unfriendly.
 - [ ] **Cross-platform builds.** Screen capture, synthetic `Ctrl+C` and auto-start are Win32 and registry specific, so macOS and Linux would each need their own implementation.
 - [ ] **Code sign the installers.** Releases are unsigned, so SmartScreen warns on first launch.

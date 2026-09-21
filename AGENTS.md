@@ -50,7 +50,7 @@ Commands run through Windows PowerShell 5.1, one command at a time:
 - [Contributing](README.md#contributing) — module conventions (collaborators injected so tests need no DOM), test pairing, registering a new Rust command in `generate_handler!`, comment style
 - [Project structure](README.md#project-structure) — every source file, one line each
 - [Configuration](README.md#configuration) — settings, the `capture2text_*` localStorage keys, registry autostart
-- [Troubleshooting](README.md#troubleshooting) — known failure modes and their causes
+- [Troubleshooting](TROUBLESHOOTING.md) — known failure modes and their causes
 
 Licensed **Apache-2.0** ([LICENSE](LICENSE)): keep copyright and license notices intact, state changed files, and keep new dependencies permissive (MIT / Apache-2.0 / BSD) so the Apache-2.0 grant stays valid.
 
