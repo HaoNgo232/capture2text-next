@@ -146,6 +146,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const startHiddenCheckbox = document.getElementById("startHiddenCheckbox") as HTMLInputElement | null;
   const showPreviewCheckbox = document.getElementById("showPreviewCheckbox") as HTMLInputElement | null;
   const autostartCheckbox = document.getElementById("autostartCheckbox") as HTMLInputElement | null;
+  const translationOnlyCheckbox = document.getElementById("translationOnlyCheckbox") as HTMLInputElement | null;
   const shortcutPresetSelect = document.getElementById("shortcutPresetSelect") as HTMLSelectElement;
   const customShortcutInput = document.getElementById("customShortcutInput") as HTMLInputElement;
   const recordShortcutBtn = document.getElementById("recordShortcutBtn") as HTMLButtonElement;
@@ -237,6 +238,10 @@ document.addEventListener("DOMContentLoaded", () => {
     if (shortcutsBtn) {
       shortcutsBtn.classList.toggle("btn-active", view === "shortcuts");
     }
+  }
+
+  function applyTranslationOnly() {
+    mainView.classList.toggle("translation-only", configStore.get("translationOnly"));
   }
 
   function updateProviderUI() {
@@ -696,6 +701,10 @@ document.addEventListener("DOMContentLoaded", () => {
   if (showPreviewCheckbox) showPreviewCheckbox.checked = configStore.get("showPreview");
   autoTranslateCheckbox.checked = configStore.get("autoTranslate");
 
+  // Apply translation-only mode on startup
+  if (translationOnlyCheckbox) translationOnlyCheckbox.checked = configStore.get("translationOnly");
+  applyTranslationOnly();
+
   // Initialize i18n from config
   const savedLang = configStore.get("language");
   i18n.setLang(savedLang);
@@ -789,6 +798,8 @@ document.addEventListener("DOMContentLoaded", () => {
       if (startHiddenCheckbox) startHiddenCheckbox.checked = configStore.get("startHidden");
       if (showPreviewCheckbox) showPreviewCheckbox.checked = configStore.get("showPreview");
       autoTranslateCheckbox.checked = configStore.get("autoTranslate");
+      if (translationOnlyCheckbox) translationOnlyCheckbox.checked = configStore.get("translationOnly");
+      applyTranslationOnly();
       if (quickTranslateShortcutInput) quickTranslateShortcutInput.value = configStore.get("quickTranslateShortcut");
       i18n.setLang(langBeforeSettings);
       configStore.set("language", langBeforeSettings);
@@ -985,11 +996,13 @@ document.addEventListener("DOMContentLoaded", () => {
       startHidden: startHiddenCheckbox ? startHiddenCheckbox.checked : false,
       showPreview: showPreviewCheckbox ? showPreviewCheckbox.checked : false,
       autoTranslate: autoTranslateCheckbox.checked,
+      translationOnly: translationOnlyCheckbox ? translationOnlyCheckbox.checked : false,
       quickTranslateShortcut: quickTranslateShortcutInput ? quickTranslateShortcutInput.value.trim() : configStore.get("quickTranslateShortcut"),
     });
 
     if (fetchModelsHint) fetchModelsHint.classList.add("hidden");
     updateProviderUI();
+    applyTranslationOnly();
     switchView("main");
   });
 

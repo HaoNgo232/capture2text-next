@@ -12,6 +12,7 @@ describe("ConfigStore", () => {
     expect(store.get("autostart")).toBe(false);
     expect(store.get("showPreview")).toBe(false);
     expect(store.get("autoTranslate")).toBe(true);
+    expect(store.get("translationOnly")).toBe(false);
   });
 
   it("persists and reads back typed configuration values", () => {
@@ -20,11 +21,13 @@ describe("ConfigStore", () => {
     store.set("provider", "groq");
     store.set("startHidden", true);
     store.set("shortcut", "Ctrl+Shift+S");
+    store.set("translationOnly", true);
 
     expect(store.get("apiKey")).toBe("gsk_custom_123");
     expect(store.get("provider")).toBe("groq");
     expect(store.get("startHidden")).toBe(true);
     expect(store.get("shortcut")).toBe("Ctrl+Shift+S");
+    expect(store.get("translationOnly")).toBe(true);
   });
 
   it("updates multiple settings at once with setMany", () => {

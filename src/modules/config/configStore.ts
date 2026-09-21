@@ -13,6 +13,7 @@ export interface AppConfig {
   autostart: boolean;
   showPreview: boolean;
   autoTranslate: boolean;
+  translationOnly: boolean;
   language: AppLanguage;
 }
 
@@ -27,6 +28,7 @@ export const STORAGE_KEYS = {
   AUTOSTART: "capture2text_autostart",
   SHOW_PREVIEW: "capture2text_show_preview",
   AUTO_TRANSLATE: "capture2text_auto_translate",
+  TRANSLATION_ONLY: "capture2text_translation_only",
   LANGUAGE: "capture2text_language",
 } as const;
 
@@ -41,6 +43,7 @@ export const DEFAULT_CONFIG: AppConfig = {
   autostart: false,
   showPreview: false,
   autoTranslate: true,
+  translationOnly: false,
   language: "en",
 };
 
@@ -132,6 +135,12 @@ const CONFIG_SCHEMA: { [K in keyof AppConfig]: ConfigFieldDef<AppConfig[K]> } = 
     storageKey: STORAGE_KEYS.AUTO_TRANSLATE,
     defaultVal: DEFAULT_CONFIG.autoTranslate,
     deserialize: (raw) => (raw === null ? DEFAULT_CONFIG.autoTranslate : raw === "true"),
+    serialize: String,
+  },
+  translationOnly: {
+    storageKey: STORAGE_KEYS.TRANSLATION_ONLY,
+    defaultVal: DEFAULT_CONFIG.translationOnly,
+    deserialize: (raw) => (raw === null ? DEFAULT_CONFIG.translationOnly : raw === "true"),
     serialize: String,
   },
   language: {

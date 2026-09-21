@@ -31,6 +31,7 @@ const ALL_KEYS = [
   "settings.autoTranslate",
   "settings.startHidden",
   "settings.showPreview",
+  "settings.translationOnly",
   "settings.autostart",
   "settings.quickTranslateLabel",
   "settings.recordBtn",

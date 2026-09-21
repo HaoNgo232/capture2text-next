@@ -28,6 +28,7 @@ const en = {
     autoTranslate: "Auto-translate after OCR scan",
     startHidden: "Start hidden in system tray (Silent Startup)",
     showPreview: "Show preview image before scanning (Image Preview)",
+    translationOnly: "Translation-only display (hide original text)",
     autostart: "Auto-start with Windows (Auto Startup)",
     quickTranslateLabel: "Quick translate selected text shortcut",
     recordBtn: "Record key",

@@ -28,6 +28,7 @@ const vi = {
     autoTranslate: "Tự động dịch sau khi quét OCR",
     startHidden: "Khởi động ẩn trong khay hệ thống (Silent Startup)",
     showPreview: "Hiển thị ảnh xem trước khi quét (Image Preview)",
+    translationOnly: "Chỉ hiển thị bản dịch (ẩn văn bản gốc)",
     autostart: "Tự khởi động cùng Windows (Auto Startup)",
     quickTranslateLabel: "Phím tắt dịch nhanh văn bản đã chọn",
     recordBtn: "Ghi phím",

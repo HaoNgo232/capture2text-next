@@ -362,6 +362,16 @@ select, option {
   flex-direction: column;
 }
 
+.translation-only .source-box,
+.translation-only .action-divider {
+  display: none !important;
+}
+
+.translation-only .target-box {
+  flex: 1;
+  min-height: 0;
+}
+
 .box-header {
   display: flex;
   align-items: center;
