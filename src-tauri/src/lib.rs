@@ -350,33 +350,83 @@ fn is_autostart_enabled() -> bool {
     false
 }
 
+#[cfg(all(target_os = "windows", not(debug_assertions)))]
+fn write_autostart_entry() -> Result<(), String> {
+    let exe = std::env::current_exe().map_err(|e| e.to_string())?;
+    let exe_str = exe.to_str().ok_or("Đường dẫn exe không hợp lệ")?;
+    let reg_value = format!("\"{}\" --silent", exe_str);
+
+    let output = std::process::Command::new("reg")
+        .args(&[
+            "add",
+            "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run",
+            "/v",
+            "Capture2TextNext",
+            "/t",
+            "REG_SZ",
+            "/d",
+            &reg_value,
+            "/f",
+        ])
+        .output()
+        .map_err(|e| e.to_string())?;
+
+    if !output.status.success() {
+        return Err("Không thể ghi cấu hình vào Windows Registry".to_string());
+    }
+    Ok(())
+}
+
+#[cfg(all(target_os = "windows", not(debug_assertions)))]
+fn sync_autostart_entry() {
+    let output = match std::process::Command::new("reg")
+        .args(&[
+            "query",
+            "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run",
+            "/v",
+            "Capture2TextNext",
+        ])
+        .output()
+    {
+        Ok(out) if out.status.success() => out,
+        _ => return,
+    };
+
+    let stored = String::from_utf8_lossy(&output.stdout)
+        .lines()
+        .find_map(|line| line.split_once("REG_SZ").map(|(_, value)| value.trim().to_string()));
+    let stored = match stored {
+        Some(value) => value,
+        None => return,
+    };
+
+    let exe = match std::env::current_exe() {
+        Ok(path) => path,
+        Err(_) => return,
+    };
+    let exe_str = match exe.to_str() {
+        Some(s) => s,
+        None => return,
+    };
+    let expected = format!("\"{}\" --silent", exe_str);
+
+    if stored != expected {
+        let _ = write_autostart_entry();
+    }
+}
+
 #[tauri::command]
 fn set_autostart(enabled: bool) -> Result<bool, String> {
     #[cfg(target_os = "windows")]
     {
         if enabled {
-            let exe = std::env::current_exe().map_err(|e| e.to_string())?;
-            let exe_str = exe.to_str().ok_or("Đường dẫn exe không hợp lệ")?;
-            let reg_value = format!("\"{}\" --silent", exe_str);
-
-            let output = std::process::Command::new("reg")
-                .args(&[
-                    "add",
-                    "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run",
-                    "/v",
-                    "Capture2TextNext",
-                    "/t",
-                    "REG_SZ",
-                    "/d",
-                    &reg_value,
-                    "/f",
-                ])
-                .output()
-                .map_err(|e| e.to_string())?;
-
-            if !output.status.success() {
-                return Err("Không thể ghi cấu hình vào Windows Registry".to_string());
-            }
+            #[cfg(debug_assertions)]
+            return Err(
+                "Không thể bật tự khởi động từ bản phát triển: bản debug là app console, khi boot sẽ hiện cửa sổ terminal. Hãy bật ở bản đã cài đặt (release)."
+                    .to_string(),
+            );
+            #[cfg(not(debug_assertions))]
+            write_autostart_entry()?;
         } else {
             let _ = std::process::Command::new("reg")
                 .args(&[
@@ -559,6 +609,9 @@ pub fn run() {
                 .build(),
         )
         .setup(|app| {
+            #[cfg(all(target_os = "windows", not(debug_assertions)))]
+            sync_autostart_entry();
+
             let lang = current_lang().lock().map(|g| g.clone()).unwrap_or_else(|_| "en".into());
             let labels = get_tray_labels(&lang);
             let quit_i = MenuItem::with_id(app, "quit", &labels.quit, true, None::<&str>)?;
