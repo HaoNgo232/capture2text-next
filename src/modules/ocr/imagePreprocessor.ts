@@ -36,7 +36,7 @@ export function applyRec601Threshold(data: Uint8ClampedArray | number[]): void {
 
 /**
  * Preprocesses a canvas snippet for optimal OCR accuracy:
- * - Upscales very small snippets (< 40px min dimension) so character strokes are clear.
+ * - Upscales very small snippets (< 35px min dimension) so character strokes are clear.
  * - Applies adaptive luminance contrast stretching without destroying antialiased font edges.
  */
 export function preprocessImageForOcr(sourceCanvas: HTMLCanvasElement): HTMLCanvasElement {
