@@ -338,10 +338,4 @@ Direction, not commitments — no dates and nothing promised:
 
 ## License
 
-Copyright 2026 HaoNgo232. Licensed under the [Apache License, Version 2.0](LICENSE).
-
-**You may use, modify, redistribute and sell this software, including as part of a closed-source product.** Three conditions come with that: keep the copyright and license notices, state which files you changed, and take no rights to the project name or logo.
-
-In return, the license grants an express patent license and terminates it for anyone who files a patent suit over the software. [choosealicense.com](https://choosealicense.com) explains how that compares with MIT, GPL-3.0 and the rest.
-
-Dependencies keep their own licenses — MIT or Apache-2.0 throughout the current set, listed under [Acknowledgments](#acknowledgments). The third-party services the app talks to (Google Translate, Google TTS, Groq) stay subject to their own terms of service; the Google endpoints are the same public, undocumented ones the web front end uses, so no SLA is attached to them and Groq is offered as an alternative.
+Licensed under the [Apache License, Version 2.0](LICENSE).
