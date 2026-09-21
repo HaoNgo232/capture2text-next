@@ -16,6 +16,7 @@
 ![Platform](https://img.shields.io/badge/platform-Windows-0078D6?style=flat-square&logo=windows&logoColor=white)
 [![Release](https://img.shields.io/github/v/release/HaoNgo232/capture2text-next?style=flat-square&label=release&color=2ea44f)](https://github.com/HaoNgo232/capture2text-next/releases/latest)
 [![CI](https://github.com/HaoNgo232/capture2text-next/actions/workflows/ci.yml/badge.svg)](https://github.com/HaoNgo232/capture2text-next/actions/workflows/ci.yml)
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue?style=flat-square)](LICENSE)
 
 :star: If you like this project, star it on GitHub — it helps a lot!
 
@@ -337,10 +338,10 @@ Direction, not commitments — no dates and nothing promised:
 
 ## License
 
-<!-- TODO: choose a license, add the LICENSE file at the repository root, then replace this section. -->
+Copyright 2026 HaoNgo232. Licensed under the [Apache License, Version 2.0](LICENSE).
 
-**No license has been chosen yet, and the repository contains no `LICENSE` file.** That means the code is "all rights reserved" by default: it can be read and built locally, but there is no grant to copy, modify or redistribute it, and a fork would not be legally usable.
+**You may use, modify, redistribute and sell this software, including as part of a closed-source product.** Three conditions come with that: keep the copyright and license notices, state which files you changed, and take no rights to the project name or logo.
 
-This is the one thing standing between the project and being genuinely open source. [choosealicense.com](https://choosealicense.com) explains the trade-offs; MIT, Apache-2.0 and GPL-3.0 are the usual starting points.
+In return, the license grants an express patent license and terminates it for anyone who files a patent suit over the software. [choosealicense.com](https://choosealicense.com) explains how that compares with MIT, GPL-3.0 and the rest.
 
-The third-party services the app talks to (Google Translate, Google TTS, Groq) remain subject to their own terms of service. The Google endpoints are the same public, undocumented ones the web front end uses, so there is no SLA attached to them and the app offers Groq as an alternative.
+Dependencies keep their own licenses — MIT or Apache-2.0 throughout the current set, listed under [Acknowledgments](#acknowledgments). The third-party services the app talks to (Google Translate, Google TTS, Groq) stay subject to their own terms of service; the Google endpoints are the same public, undocumented ones the web front end uses, so no SLA is attached to them and Groq is offered as an alternative.

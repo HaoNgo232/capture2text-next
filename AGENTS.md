@@ -52,4 +52,6 @@ Commands run through Windows PowerShell 5.1, one command at a time:
 - [Configuration](README.md#configuration) — settings, the `capture2text_*` localStorage keys, registry autostart
 - [Troubleshooting](README.md#troubleshooting) — known failure modes and their causes
 
+Licensed **Apache-2.0** ([LICENSE](LICENSE)): keep copyright and license notices intact, state changed files, and keep new dependencies permissive (MIT / Apache-2.0 / BSD) so the Apache-2.0 grant stays valid.
+
 `skills-lock.json` in the root is untracked tooling state, not part of the build: stage explicit paths in commits.
