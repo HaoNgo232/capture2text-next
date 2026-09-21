@@ -17,12 +17,41 @@ fn focus_main_window(app: &tauri::AppHandle) {
     }
 }
 
-use std::sync::Mutex;
+use std::sync::{Mutex, OnceLock};
 use image::RgbaImage;
 
 static LAST_DESKTOP_IMAGE: Mutex<Option<RgbaImage>> = Mutex::new(None);
 static CAPTURE_SHORTCUT: Mutex<Option<Shortcut>> = Mutex::new(None);
 static QUICK_TRANSLATE_SHORTCUT: Mutex<Option<Shortcut>> = Mutex::new(None);
+static CURRENT_LANG: OnceLock<Mutex<String>> = OnceLock::new();
+
+fn current_lang() -> &'static Mutex<String> {
+    CURRENT_LANG.get_or_init(|| Mutex::new(String::from("en")))
+}
+
+struct TrayLabels {
+    show: String,
+    capture: String,
+    quick_translate: String,
+    quit: String,
+}
+
+fn get_tray_labels(lang: &str) -> TrayLabels {
+    match lang {
+        "vi" => TrayLabels {
+            show: "Mở giao diện".into(),
+            capture: "Chụp màn hình (OCR)".into(),
+            quick_translate: "Dịch nhanh văn bản chọn".into(),
+            quit: "Thoát Capture2Text".into(),
+        },
+        _ => TrayLabels {
+            show: "Show Window".into(),
+            capture: "Screenshot (OCR)".into(),
+            quick_translate: "Quick Translate Selection".into(),
+            quit: "Quit Capture2Text".into(),
+        },
+    }
+}
 
 #[tauri::command]
 fn capture_screen(app: tauri::AppHandle) -> Result<String, String> {
@@ -282,6 +311,14 @@ fn is_silent_start() -> bool {
 }
 
 #[tauri::command]
+fn set_language(lang: String) -> Result<(), String> {
+    if let Ok(mut guard) = current_lang().lock() {
+        *guard = lang;
+    }
+    Ok(())
+}
+
+#[tauri::command]
 fn is_autostart_enabled() -> bool {
     #[cfg(target_os = "windows")]
     {
@@ -504,11 +541,13 @@ pub fn run() {
                 .build(),
         )
         .setup(|app| {
-            // Build Tray Menu
-            let quit_i = MenuItem::with_id(app, "quit", "Thoát Capture2Text", true, None::<&str>)?;
-            let show_i = MenuItem::with_id(app, "show", "Mở giao diện", true, None::<&str>)?;
-            let capture_i = MenuItem::with_id(app, "capture", "Chụp màn hình (OCR)", true, None::<&str>)?;
-            let quick_trans_i = MenuItem::with_id(app, "quick_translate", "Dịch nhanh văn bản chọn", true, None::<&str>)?;
+            // Build Tray Menu with translated labels
+            let lang = current_lang().lock().map(|g| g.clone()).unwrap_or_else(|_| "en".into());
+            let labels = get_tray_labels(&lang);
+            let quit_i = MenuItem::with_id(app, "quit", &labels.quit, true, None::<&str>)?;
+            let show_i = MenuItem::with_id(app, "show", &labels.show, true, None::<&str>)?;
+            let capture_i = MenuItem::with_id(app, "capture", &labels.capture, true, None::<&str>)?;
+            let quick_trans_i = MenuItem::with_id(app, "quick_translate", &labels.quick_translate, true, None::<&str>)?;
             let menu = Menu::with_items(app, &[&show_i, &capture_i, &quick_trans_i, &quit_i])?;
 
             let _tray = TrayIconBuilder::new()
@@ -606,6 +645,7 @@ pub fn run() {
             is_silent_start,
             is_autostart_enabled,
             set_autostart,
+            set_language,
             enter_snipping,
             exit_snipping,
             show_main_window,

@@ -5,6 +5,7 @@ import { ShortcutManager } from "./modules/shortcuts/shortcutManager";
 import { OcrPipeline } from "./modules/ocr/ocrPipeline";
 import { TranslationService } from "./modules/translation/translationService";
 import { NaturalSpeechPlayer } from "./modules/speech/speechPlayer";
+import { i18n, type Lang } from "./i18n";
 
 const GOOGLE_ICON_SVG = `
 <svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true">
@@ -26,6 +27,18 @@ const OCR_TO_TTS_LANG: Record<string, string> = {
   chi_sim: "zh-CN",
   jpn: "ja",
 };
+
+function applyTranslations() {
+  document.querySelectorAll<HTMLElement>("[data-i18n]").forEach((el) => {
+    const key = el.getAttribute("data-i18n");
+    if (key) el.textContent = i18n.t(key);
+  });
+  document.querySelectorAll<HTMLElement>("[data-i18n-placeholder]").forEach((el) => {
+    const key = el.getAttribute("data-i18n-placeholder");
+    if (key) (el as HTMLInputElement).placeholder = i18n.t(key);
+  });
+  document.documentElement.lang = i18n.getLang();
+}
 
 const KNOWN_PRESETS = ["Alt+Q", "Ctrl+Shift+S", "Ctrl+Shift+Q", "Alt+D", "F4"];
 
@@ -174,7 +187,7 @@ document.addEventListener("DOMContentLoaded", () => {
           <rect x="6" y="4" width="4" height="16"></rect>
           <rect x="14" y="4" width="4" height="16"></rect>
         </svg>
-        <span>Đang đọc...</span>
+        <span>${i18n.t("status.reading")}</span>
       `;
     }
 
@@ -242,7 +255,7 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       if (shortcutHint) {
-        shortcutHint.textContent = `Lỗi phím tắt: ${msg}`;
+        shortcutHint.textContent = `${i18n.t("error.shortcutError")}: ${msg}`;
         shortcutHint.style.color = "#E53E3E";
         shortcutHint.classList.remove("hidden");
       }
@@ -262,7 +275,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       return true;
     } catch (err: unknown) {
-      console.warn("Lỗi đăng ký phím tắt dịch nhanh:", err);
+      console.warn("Quick translate shortcut registration error:", err);
       return false;
     }
   }
@@ -279,12 +292,12 @@ document.addEventListener("DOMContentLoaded", () => {
     },
     onMissingGroqKey: async () => {
       const fallback = confirm(
-        "Chưa có Groq API Key trong Cấu hình. Bạn có muốn chuyển sang Google Translate miễn phí không?"
+        i18n.t("confirm.fallbackToGoogle")
       );
       if (fallback) {
         return true;
       }
-      targetDisplay.textContent = "Vui lòng mở mục Cấu hình và nhập Groq API Key.";
+      targetDisplay.textContent = i18n.t("error.missingGroqKey");
       switchView("settings");
       return false;
     },
@@ -297,8 +310,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const targetLang = targetLangSelect.value;
     const originalBtnContent = translateBtn.innerHTML;
     translateBtn.disabled = true;
-    translateBtn.innerHTML = "<span>Đang dịch...</span>";
-    targetDisplay.textContent = "Đang kết nối...";
+    translateBtn.innerHTML = `<span>${i18n.t("status.translating")}</span>`;
+    targetDisplay.textContent = i18n.t("status.connecting");
     latencyDisplay.textContent = "...";
 
     try {
@@ -310,7 +323,7 @@ document.addEventListener("DOMContentLoaded", () => {
       targetDisplay.textContent = result.translatedText;
     } catch (err: unknown) {
       const errorStr = err instanceof Error ? err.message : String(err);
-      targetDisplay.textContent = `Lỗi: ${errorStr}`;
+      targetDisplay.textContent = `${i18n.t("error.errorPrefix")}: ${errorStr}`;
     } finally {
       translateBtn.disabled = false;
       translateBtn.innerHTML = originalBtnContent;
@@ -335,7 +348,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     ocrProgressBar.classList.remove("hidden");
     ocrProgressFill.style.width = "0%";
-    ocrProgressText.textContent = "Đang nạp mô hình OCR...";
+    ocrProgressText.textContent = i18n.t("status.loadingOcr");
 
     try {
       const cleaned = await ocrPipeline.recognize(canvas, lang, (progress) => {
@@ -346,7 +359,7 @@ document.addEventListener("DOMContentLoaded", () => {
       ocrProgressBar.classList.add("hidden");
 
       if (!cleaned) {
-        sourceInput.value = "(Không tìm thấy ký tự trong vùng chọn)";
+        sourceInput.value = i18n.t("status.noTextFound");
         if (showWindowWhenDone) {
           switchView("main");
           await invoke("show_main_window");
@@ -363,7 +376,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (showWindowWhenDone) {
         switchView("main");
         const translationText = targetDisplay.textContent?.trim() || "";
-        if (translationText && !translationText.startsWith("Lỗi")) {
+        if (translationText && !translationText.startsWith(i18n.t("error.errorPrefix"))) {
           try {
             await navigator.clipboard.writeText(translationText);
           } catch (e) {
@@ -375,7 +388,7 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch (err: unknown) {
       ocrProgressBar.classList.add("hidden");
       const errStr = err instanceof Error ? err.message : String(err);
-      targetDisplay.textContent = `Lỗi OCR: ${errStr}`;
+      targetDisplay.textContent = `${i18n.t("error.ocrErrorPrefix")}: ${errStr}`;
       if (showWindowWhenDone) {
         switchView("main");
         await invoke("show_main_window");
@@ -396,7 +409,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const desktopImg = new Image();
       const loadPromise = new Promise<void>((resolve, reject) => {
         desktopImg.onload = () => resolve();
-        desktopImg.onerror = () => reject(new Error("Không thể nạp ảnh chụp màn hình"));
+        desktopImg.onerror = () => reject(new Error(i18n.t("error.imageLoadFail")));
       });
       desktopImg.src = desktopDataUrl;
 
@@ -415,8 +428,8 @@ document.addEventListener("DOMContentLoaded", () => {
       snippingOverlay.classList.add("hidden");
       await invoke("exit_snipping", { showWindow: true });
       const errStr = err instanceof Error ? err.message : String(err);
-      console.error("Lỗi khởi tạo snipping:", errStr);
-      targetDisplay.textContent = `Lỗi khởi tạo snipping: ${errStr}`;
+      console.error("Snipping init error:", errStr);
+      targetDisplay.textContent = `${i18n.t("error.snippingInit")}: ${errStr}`;
     }
   }
 
@@ -565,7 +578,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const cropImg = new Image();
             await new Promise<void>((resolve, reject) => {
               cropImg.onload = () => resolve();
-              cropImg.onerror = () => reject(new Error("Lỗi tải crop lossless"));
+              cropImg.onerror = () => reject(new Error(i18n.t("error.cropLoad")));
               cropImg.src = losslessDataUrl;
             });
             if (ctx) {
@@ -585,8 +598,8 @@ document.addEventListener("DOMContentLoaded", () => {
           await runOcrOnCanvas(cropCanvas, true);
         } catch (err: unknown) {
           const errStr = err instanceof Error ? err.message : String(err);
-          console.error("Lỗi xử lý crop:", errStr);
-          targetDisplay.textContent = `Lỗi xử lý ảnh: ${errStr}`;
+          console.error("Crop processing error:", errStr);
+          targetDisplay.textContent = `${i18n.t("error.imageProcess")}: ${errStr}`;
           await invoke("show_main_window");
         }
       } else {
@@ -637,10 +650,10 @@ document.addEventListener("DOMContentLoaded", () => {
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <rect x="6" y="6" width="12" height="12" rx="2"></rect>
       </svg>
-      <span>Bấm phím... (Esc hủy)</span>
+      <span>${i18n.t("status.recording")}</span>
     `;
     customShortcutInput.classList.remove("hidden");
-    customShortcutInput.value = "Đang chờ bấm tổ hợp phím...";
+    customShortcutInput.value = i18n.t("status.waitingForKey");
     customShortcutInput.focus();
   }
 
@@ -652,7 +665,7 @@ document.addEventListener("DOMContentLoaded", () => {
         <circle cx="12" cy="12" r="10"></circle>
         <circle cx="12" cy="12" r="3"></circle>
       </svg>
-      <span>Ghi phím</span>
+      <span>${i18n.t("settings.recordBtn")}</span>
     `;
   }
 
@@ -665,6 +678,25 @@ document.addEventListener("DOMContentLoaded", () => {
   if (startHiddenCheckbox) startHiddenCheckbox.checked = configStore.get("startHidden");
   if (showPreviewCheckbox) showPreviewCheckbox.checked = configStore.get("showPreview");
   autoTranslateCheckbox.checked = configStore.get("autoTranslate");
+
+  // Initialize i18n from config
+  const savedLang = configStore.get("language");
+  i18n.setLang(savedLang);
+  applyTranslations();
+  invoke("set_language", { lang: savedLang }).catch(() => {});
+
+  // Language selector wiring
+  const languageSelect = document.getElementById("languageSelect") as HTMLSelectElement | null;
+  if (languageSelect) {
+    languageSelect.value = savedLang;
+    languageSelect.addEventListener("change", () => {
+      const lang = languageSelect.value as Lang;
+      configStore.set("language", lang);
+      i18n.setLang(lang);
+      applyTranslations();
+      invoke("set_language", { lang }).catch(() => {});
+    });
+  }
 
   updateProviderUI();
 
@@ -740,6 +772,11 @@ document.addEventListener("DOMContentLoaded", () => {
       if (showPreviewCheckbox) showPreviewCheckbox.checked = configStore.get("showPreview");
       autoTranslateCheckbox.checked = configStore.get("autoTranslate");
       if (quickTranslateShortcutInput) quickTranslateShortcutInput.value = configStore.get("quickTranslateShortcut");
+      const savedLang = configStore.get("language");
+      if (languageSelect) languageSelect.value = savedLang;
+      i18n.setLang(savedLang);
+      applyTranslations();
+      invoke("set_language", { lang: savedLang }).catch(() => {});
       invoke<boolean>("is_autostart_enabled")
         .then((enabled) => { if (autostartCheckbox) autostartCheckbox.checked = enabled; })
         .catch(() => {});
@@ -777,12 +814,12 @@ document.addEventListener("DOMContentLoaded", () => {
     recordQuickTranslateShortcutBtn.addEventListener("click", () => {
       if (isRecordingQtShortcut) {
         isRecordingQtShortcut = false;
-        recordQuickTranslateShortcutBtn.querySelector("span")!.textContent = "Ghi phím";
+        recordQuickTranslateShortcutBtn.querySelector("span")!.textContent = i18n.t("settings.recordBtn");
         quickTranslateShortcutInput.value = configStore.get("quickTranslateShortcut");
       } else {
         isRecordingQtShortcut = true;
-        recordQuickTranslateShortcutBtn.querySelector("span")!.textContent = "Bấm phím...";
-        quickTranslateShortcutInput.value = "Đang chờ bấm tổ hợp phím...";
+        recordQuickTranslateShortcutBtn.querySelector("span")!.textContent = i18n.t("status.recording");
+        quickTranslateShortcutInput.value = i18n.t("status.waitingForKey");
         quickTranslateShortcutInput.focus();
       }
     });
@@ -814,7 +851,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (e.key === "Escape") {
         isRecordingQtShortcut = false;
-        recordQuickTranslateShortcutBtn.querySelector("span")!.textContent = "Ghi phím";
+        recordQuickTranslateShortcutBtn.querySelector("span")!.textContent = i18n.t("settings.recordBtn");
         quickTranslateShortcutInput.value = configStore.get("quickTranslateShortcut");
         return;
       }
@@ -823,7 +860,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (parsed) {
         quickTranslateShortcutInput.value = parsed;
         isRecordingQtShortcut = false;
-        recordQuickTranslateShortcutBtn.querySelector("span")!.textContent = "Ghi phím";
+        recordQuickTranslateShortcutBtn.querySelector("span")!.textContent = i18n.t("settings.recordBtn");
       }
       return;
     }
@@ -842,7 +879,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!apiKey) {
         if (fetchModelsHint) {
           fetchModelsHint.className = "setting-hint error";
-          fetchModelsHint.textContent = "Vui lòng nhập Groq API Key trước khi tải danh sách.";
+          fetchModelsHint.textContent = i18n.t("settings.enterApiKeyFirst");
           fetchModelsHint.classList.remove("hidden");
         }
         apiKeyInput.focus();
@@ -850,10 +887,10 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       fetchModelsBtn.disabled = true;
-      if (fetchModelsBtnText) fetchModelsBtnText.textContent = "Đang tải...";
+      if (fetchModelsBtnText) fetchModelsBtnText.textContent = i18n.t("settings.fetchingModels");
       if (fetchModelsHint) {
         fetchModelsHint.className = "setting-hint";
-        fetchModelsHint.textContent = "Đang kết nối tới Groq API để lấy danh sách mô hình...";
+        fetchModelsHint.textContent = i18n.t("settings.fetchingModelsStatus");
         fetchModelsHint.classList.remove("hidden");
       }
 
@@ -862,7 +899,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (models.length === 0) {
           if (fetchModelsHint) {
             fetchModelsHint.className = "setting-hint error";
-            fetchModelsHint.textContent = "Không tìm thấy mô hình nào khả dụng trên tài khoản của bạn.";
+            fetchModelsHint.textContent = i18n.t("settings.noModelsFound");
           }
         } else {
           const ids = models.map((m) => m.id);
@@ -875,18 +912,18 @@ document.addEventListener("DOMContentLoaded", () => {
           populateModelDropdown(ids, ids.includes(prev) ? prev : ids[0]);
           if (fetchModelsHint) {
             fetchModelsHint.className = "setting-hint success";
-            fetchModelsHint.textContent = `✓ Đã tìm thấy và cập nhật ${models.length} mô hình khả dụng!`;
+            fetchModelsHint.textContent = i18n.t("settings.modelsFound", { count: String(models.length) });
           }
         }
       } catch (err: unknown) {
         if (fetchModelsHint) {
           fetchModelsHint.className = "setting-hint error";
           const msg = err instanceof Error ? err.message : String(err);
-          fetchModelsHint.textContent = `Lỗi: ${msg}`;
+          fetchModelsHint.textContent = `Error: ${msg}`;
         }
       } finally {
         fetchModelsBtn.disabled = false;
-        if (fetchModelsBtnText) fetchModelsBtnText.textContent = "Tải danh sách model";
+        if (fetchModelsBtnText) fetchModelsBtnText.textContent = i18n.t("settings.fetchModelsBtn");
       }
     });
   }
@@ -1021,7 +1058,7 @@ document.addEventListener("DOMContentLoaded", () => {
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <polyline points="20 6 9 17 4 12"></polyline>
         </svg>
-        <span>Đã sao chép</span>
+        <span>${i18n.t("status.copied")}</span>
       `;
       setTimeout(() => {
         copyBtn.innerHTML = originalHTML;

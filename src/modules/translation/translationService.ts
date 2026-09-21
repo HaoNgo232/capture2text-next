@@ -6,6 +6,7 @@ import type {
   TranslationResult,
   TranslationServiceConfig,
 } from "./types";
+import { i18n } from "../../i18n";
 
 export interface TranslationServiceOptions {
   fetcher?: typeof fetch;
@@ -54,10 +55,10 @@ export class TranslationService {
             provider = "google";
             this.config.setProvider?.("google");
           } else {
-            throw new Error("Vui lòng mở mục Cấu hình và nhập Groq API Key.");
+            throw new Error(i18n.t("error.missingGroqKey"));
           }
         } else {
-          throw new Error("Vui lòng mở mục Cấu hình và nhập Groq API Key.");
+          throw new Error(i18n.t("error.missingGroqKey"));
         }
       }
     }

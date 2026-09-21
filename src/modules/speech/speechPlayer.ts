@@ -1,4 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
+import { i18n } from "../../i18n";
 
 /**
  * Splits text into chunks respecting sentence/clause punctuation and character limits (default 150 chars),
@@ -171,7 +172,7 @@ export class NaturalSpeechPlayer {
           startPlayback(audioSrc);
         }
       } catch (err) {
-        console.warn("Backend TTS không phản hồi, thử Web Speech API:", err);
+        console.warn(i18n.t("error.ttsFallback"), err);
         handleTtsFailure();
       }
     };

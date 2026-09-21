@@ -1,6 +1,7 @@
 import Tesseract from "tesseract.js";
 import { preprocessImageForOcr } from "./imagePreprocessor";
 import { cleanRecognizedText } from "./textCleaner";
+import { i18n } from "../../i18n";
 
 export interface OcrProgress {
   status: string;
@@ -41,7 +42,7 @@ export class OcrPipeline {
   ): Promise<string> {
     const tesseract = this.getTesseract();
     if (!tesseract) {
-      throw new Error("Thư viện OCR chưa sẵn sàng. Vui lòng thử lại sau vài giây.");
+      throw new Error(i18n.t("error.ocrNotReady"));
     }
 
     const processedCanvas = this.preprocess(canvas);
@@ -51,7 +52,7 @@ export class OcrPipeline {
         if (!onProgress) return;
         if (m.status === "recognizing text") {
           const percent = Math.round((m.progress ?? 0) * 100);
-          onProgress({ status: `Nhận diện: ${percent}%`, percent });
+          onProgress({ status: i18n.t("status.recognizing", { percent: String(percent) }), percent });
         } else if (m.status) {
           onProgress({ status: m.status, percent: 0 });
         }

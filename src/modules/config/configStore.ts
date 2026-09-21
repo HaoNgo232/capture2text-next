@@ -1,3 +1,5 @@
+export type AppLanguage = "vi" | "en";
+
 export interface AppConfig {
   apiKey: string;
   model: string;
@@ -9,6 +11,7 @@ export interface AppConfig {
   autostart: boolean;
   showPreview: boolean;
   autoTranslate: boolean;
+  language: AppLanguage;
 }
 
 export const STORAGE_KEYS = {
@@ -22,6 +25,7 @@ export const STORAGE_KEYS = {
   AUTOSTART: "capture2text_autostart",
   SHOW_PREVIEW: "capture2text_show_preview",
   AUTO_TRANSLATE: "capture2text_auto_translate",
+  LANGUAGE: "capture2text_language",
 } as const;
 
 export const DEFAULT_CONFIG: AppConfig = {
@@ -35,6 +39,7 @@ export const DEFAULT_CONFIG: AppConfig = {
   autostart: false,
   showPreview: false,
   autoTranslate: true,
+  language: "en",
 };
 
 export interface SimpleStorage {
@@ -125,6 +130,12 @@ const CONFIG_SCHEMA: { [K in keyof AppConfig]: ConfigFieldDef<AppConfig[K]> } = 
     storageKey: STORAGE_KEYS.AUTO_TRANSLATE,
     defaultVal: DEFAULT_CONFIG.autoTranslate,
     deserialize: (raw) => (raw === null ? DEFAULT_CONFIG.autoTranslate : raw === "true"),
+    serialize: String,
+  },
+  language: {
+    storageKey: STORAGE_KEYS.LANGUAGE,
+    defaultVal: DEFAULT_CONFIG.language,
+    deserialize: (raw) => (raw === "en" ? "en" : DEFAULT_CONFIG.language),
     serialize: String,
   },
 };

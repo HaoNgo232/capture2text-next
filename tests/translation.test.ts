@@ -31,7 +31,7 @@ describe("GoogleTranslateAdapter", () => {
     const adapter = new GoogleTranslateAdapter(fakeFetch as any);
     expect(
       adapter.translate({ text: "Hello", targetLang: "vi" })
-    ).rejects.toThrow("Lỗi kết nối Google Translate (HTTP 429)");
+    ).rejects.toThrow("Google Translate connection error (HTTP 429)");
   });
 
   it("safely invokes fetch when bound to native window context (prevents Illegal invocation)", async () => {
@@ -158,7 +158,7 @@ describe("GroqTranslateAdapter", () => {
 
     expect(
       adapter.translate({ text: "Test", targetLang: "vi" })
-    ).rejects.toThrow("không khả dụng hoặc đã ngừng hoạt động trên Groq");
+    ).rejects.toThrow("is not available or has been discontinued on Groq");
   });
 
   describe("fetchAvailableModels", () => {
@@ -287,7 +287,7 @@ describe("TranslationService", () => {
 
     expect(
       service.translate({ text: "Hello", targetLang: "vi" })
-    ).rejects.toThrow("Vui lòng mở mục Cấu hình và nhập Groq API Key.");
+    ).rejects.toThrow("Please open Settings and enter Groq API Key.");
   });
 
   it("fetchGroqModels delegates to GroqTranslateAdapter with configured key and fetcher", async () => {

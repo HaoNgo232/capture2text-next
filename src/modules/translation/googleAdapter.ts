@@ -1,4 +1,5 @@
 import type { TranslationAdapter, TranslationRequest } from "./types";
+import { i18n } from "../../i18n";
 
 export class GoogleTranslateAdapter implements TranslationAdapter {
   private fetcher: typeof fetch;
@@ -15,7 +16,7 @@ export class GoogleTranslateAdapter implements TranslationAdapter {
 
     const res = await this.fetcher(url);
     if (!res.ok) {
-      throw new Error(`Lỗi kết nối Google Translate (HTTP ${res.status})`);
+      throw new Error(i18n.t("error.googleTranslateFail", { status: String(res.status) }));
     }
 
     const data = await res.json();

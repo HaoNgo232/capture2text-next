@@ -1,4 +1,5 @@
 import type { TranslationAdapter, TranslationRequest } from "./types";
+import { i18n } from "../../i18n";
 
 export interface GroqAdapterOptions {
   apiKey: string | (() => string);
@@ -111,7 +112,7 @@ export class GroqTranslateAdapter implements TranslationAdapter {
       const msg = data.error?.message || `HTTP ${response.status}`;
       if (msg.includes("does not exist") || msg.includes("access to it")) {
         throw new Error(
-          `Mô hình '${model}' không khả dụng hoặc đã ngừng hoạt động trên Groq. Vui lòng mở 'Cấu hình' và bấm 'Tải danh sách model' để chọn mô hình khả dụng.`
+          i18n.t("error.groqModelUnavailable", { model })
         );
       }
       throw new Error(msg);
