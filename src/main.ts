@@ -5,6 +5,7 @@ import { ShortcutManager } from "./modules/shortcuts/shortcutManager";
 import { OcrPipeline } from "./modules/ocr/ocrPipeline";
 import { TranslationService } from "./modules/translation/translationService";
 import { NaturalSpeechPlayer } from "./modules/speech/speechPlayer";
+import { debounce } from "./modules/debounce";
 import { i18n, type Lang } from "./i18n";
 
 const GOOGLE_ICON_SVG = `
@@ -1022,21 +1023,18 @@ document.addEventListener("DOMContentLoaded", () => {
   sourceInput.addEventListener("keydown", (e: KeyboardEvent) => {
     if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
       e.preventDefault();
-      clearTimeout(autoTranslateTimer);
+      debouncedTranslate.cancel();
       performTranslation();
     }
   });
 
   // Auto-translate on text input with debounce
   const AUTO_TRANSLATE_DELAY_MS = 500;
-  let autoTranslateTimer: ReturnType<typeof setTimeout> | undefined;
+  const debouncedTranslate = debounce(performTranslation, AUTO_TRANSLATE_DELAY_MS);
   sourceInput.addEventListener("input", () => {
     const text = sourceInput.value.trim();
     if (!text) return;
-    clearTimeout(autoTranslateTimer);
-    autoTranslateTimer = setTimeout(() => {
-      performTranslation();
-    }, AUTO_TRANSLATE_DELAY_MS);
+    debouncedTranslate();
   });
 
   // Clipboard Paste (Ctrl+V) handler for images
