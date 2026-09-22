@@ -11,6 +11,7 @@ const en = {
     clearBtn: "Clear",
     targetLabel: "Translation",
     copyBtn: "Copy",
+    translateBtn: "Translate",
     placeholder: "Paste image (Ctrl+V), take screenshot, or type text to translate...",
   },
   settings: {

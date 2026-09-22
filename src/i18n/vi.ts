@@ -11,6 +11,7 @@ const vi = {
     clearBtn: "Xóa",
     targetLabel: "Bản dịch",
     copyBtn: "Sao chép",
+    translateBtn: "Dịch",
     placeholder: "Dán ảnh (Ctrl+V), chụp màn hình hoặc nhập văn bản cần dịch...",
   },
   settings: {

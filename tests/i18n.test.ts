@@ -11,6 +11,7 @@ const ALL_KEYS = [
   "main.clearBtn",
   "main.targetLabel",
   "main.copyBtn",
+  "main.translateBtn",
   "main.placeholder",
   "settings.title",
   "settings.backBtn",
