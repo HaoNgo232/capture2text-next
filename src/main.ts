@@ -88,7 +88,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const providerIcon = document.getElementById("providerIcon") as HTMLSpanElement | null;
   const targetLangSelect = document.getElementById("targetLangSelect") as HTMLSelectElement;
   const ocrLangSelect = document.getElementById("ocrLangSelect") as HTMLSelectElement;
-  const translateBtn = document.getElementById("translateBtn") as HTMLButtonElement;
+
   const captureBtn = document.getElementById("captureBtn") as HTMLButtonElement;
   const sourceSpeechBtn = document.getElementById("sourceSpeechBtn") as HTMLButtonElement | null;
   const copyBtn = document.getElementById("copyBtn") as HTMLButtonElement;
@@ -331,9 +331,6 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!text) return;
 
     const targetLang = targetLangSelect.value;
-    const originalBtnContent = translateBtn.innerHTML;
-    translateBtn.disabled = true;
-    translateBtn.innerHTML = `<span>${i18n.t("status.translating")}</span>`;
     targetDisplay.textContent = i18n.t("status.connecting");
     latencyDisplay.textContent = "...";
 
@@ -347,9 +344,6 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch (err: unknown) {
       const errorStr = err instanceof Error ? err.message : String(err);
       targetDisplay.textContent = `${i18n.t("error.errorPrefix")}: ${errorStr}`;
-    } finally {
-      translateBtn.disabled = false;
-      translateBtn.innerHTML = originalBtnContent;
     }
   }
 
@@ -1089,7 +1083,6 @@ document.addEventListener("DOMContentLoaded", () => {
     console.warn("Could not register trigger-quick-translate listener:", err);
   }
 
-  translateBtn.addEventListener("click", performTranslation);
 
   copyBtn.addEventListener("click", async () => {
     const text = targetDisplay.textContent?.trim() || "";
