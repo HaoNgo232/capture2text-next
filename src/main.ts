@@ -1022,8 +1022,21 @@ document.addEventListener("DOMContentLoaded", () => {
   sourceInput.addEventListener("keydown", (e: KeyboardEvent) => {
     if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
       e.preventDefault();
+      clearTimeout(autoTranslateTimer);
       performTranslation();
     }
+  });
+
+  // Auto-translate on text input with debounce
+  const AUTO_TRANSLATE_DELAY_MS = 500;
+  let autoTranslateTimer: ReturnType<typeof setTimeout> | undefined;
+  sourceInput.addEventListener("input", () => {
+    const text = sourceInput.value.trim();
+    if (!text) return;
+    clearTimeout(autoTranslateTimer);
+    autoTranslateTimer = setTimeout(() => {
+      performTranslation();
+    }, AUTO_TRANSLATE_DELAY_MS);
   });
 
   // Clipboard Paste (Ctrl+V) handler for images
